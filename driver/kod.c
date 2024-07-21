@@ -27,7 +27,8 @@ MODULE_DESCRIPTION("FPU Exp Driver");
 MODULE_LICENSE("Dual BSD/GPL");
 
 #define      DRIVER_NAME        "fpu_driver" 
-#define      BUFF_SIZE 	        200
+#define      BUFF_SIZE 	        128
+#define      MAX_ARRAY_SIZE     256
 #define      ARR_SIZE  	        5
 
 
@@ -197,7 +198,7 @@ static int __init fpu_init(void) {
 		goto fail_3;
 	}
 	else {
-		printk("[fpu_init] Successfully allocated memory for transaction buffer\n");
+		printk("[fpu_init] Successfully allocated memory for transmission buffer\n");
 	}
 
 	*tx_vir_buffer = 0;
@@ -383,70 +384,66 @@ ssize_t fpu_read(struct file *pfile, char __user *buf, size_t length, loff_t *of
 
 ssize_t fpu_write(struct file *pfile, const char __user *buf, size_t length, loff_t *offset) {	
 
-	char buff[length + 1];
-	int brojac = 1;
-	int flag = 0;
-	int pomeraj = 0;
-	int ret;
-    int i = 0;
-	char str1[50];
-	char str2[50];
-	u32 tmp1, tmp2;
-	ret = copy_from_user(buff, buf, length);
-    	if (ret) {
-       		 printk(KERN_WARNING "[fpu_write] copy from user failed\n");
-       		 return -EFAULT;
-   	}
+	char kernel_buf[BUFF_SIZE];
+    int ret;
+    int pos;
+    u32 value;
 
-	buff[length] = '\0';
-	for(i = 0; buff[i] != '\0'; i++) {
-		if(buff[i] == ';') {
-			brojac++;
-		}
-	}
+    // Check if the buffer length is within limits
+    if (length >= BUFF_SIZE) {
+        printk(KERN_WARNING "[fpu_write] Input too large\n");
+        return -EFAULT;
+    }
 
-	if(posIn >= (ARR_SIZE*2 - 1)) {
-		cntr = 1;
-		printk(KERN_WARNING "[fpu_write] Driver is already full\n");
-		goto label1;
-	}
-	while(brojac != 1) {
-		if(brojac > (ARR_SIZE + 1)) {
-			printk(KERN_WARNING "[fpu_write] Too much requests for multiplication\n");
-			flag = 1;
-			break;
-		}
-		if(posIn < (ARR_SIZE*2-1)) {
-			ret = sscanf(buff + pomeraj, "%50[^,], %50[^;];", str1, str2);
-			if(ret != 2) {
-				printk(KERN_WARNING "[fpu_write] Parsing failed\n");
-       				return -EFAULT;
-			}
-			sscanf(str1, "%x", &tmp1);
-			ulazni_niz[posIn] = tmp1;
-			printk(KERN_INFO "[fpu_write] BROJ %d: %#x\n", (posIn + 1), ulazni_niz[posIn]);	
-			posIn++;
-			sscanf(str2, "%x", &tmp2);
-			ulazni_niz[posIn] = tmp2;
-			printk(KERN_INFO "[fpu_write] BROJ %d: %#x\n", (posIn + 1), ulazni_niz[posIn]);
-			posIn++; 
-			pomeraj = pomeraj +  strlen(str1) + strlen(str2) + 3;
-			--brojac;
-		}
-		else {
-			printk(KERN_WARNING "[fpu_write] Driver is full\n");
-			break;
-		}
-	}
+    // Copy data from user space
+    ret = copy_from_user(kernel_buf, buf, length);
+    if (ret) {
+        printk(KERN_WARNING "[fpu_write] Copy from user failed\n");
+        return -EFAULT;
+    }
+    
+    kernel_buf[length] = '\0'; // Null-terminate the string
 
-	printk(KERN_INFO "[fpu_write] Succesfully wrote in driver\n");
-	label1:
-		if(cntr == 0  && flag != 1) {
-			cntr++;
-			*tx_vir_buffer = ulazni_niz[cntrIn++];	
-			dma_simple_write(tx_phy_buffer, MAX_PKT_LEN, dma_p->base_addr);
-		}
-		return length;
+    // Check for initialization command
+    if (sscanf(kernel_buf, "N=%d", &array_size) == 1) {
+        if (array_size > 0 && array_size <= MAX_ARRAY_SIZE) {
+            // Allocate and initialize the array
+            if (fpu_array != NULL) {
+                kfree(fpu_array); // Free the previous array if it exists
+            }
+            fpu_array = kzalloc(array_size * sizeof(u32), GFP_KERNEL);
+            if (!fpu_array) {
+                printk(KERN_ERR "[fpu_write] Memory allocation failed\n");
+                return -ENOMEM;
+            }
+            initialized = 1;
+            printk(KERN_INFO "[fpu_write] Array initialized with size %d\n", array_size);
+        } else {
+            printk(KERN_WARNING "[fpu_write] Invalid array size\n");
+            return -EINVAL;
+        }
+    } 
+    // Check for position=value command
+    else if (sscanf(kernel_buf, "Pozicija=%d=0x%x", &pos, &value) == 2) {
+        if (!initialized) {
+            printk(KERN_WARNING "[fpu_write] Array not initialized\n");
+            return -EINVAL;
+        }
+        if (pos >= 0 && pos < array_size) {
+            fpu_array[pos] = value;
+            printk(KERN_INFO "[fpu_write] Position %d updated with value %#010x\n", pos, value);
+        } else {
+            printk(KERN_WARNING "[fpu_write] Invalid position\n");
+            return -EINVAL;
+        }
+    } 
+    // Invalid command
+    else {
+        printk(KERN_WARNING "[fpu_write] Invalid command format\n");
+        return -EINVAL;
+    }
+
+    return length;
 }
 
 //** Mmap Function **//  /* VEZBA 12*/
