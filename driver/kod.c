@@ -374,6 +374,7 @@ ssize_t fpu_write(struct file *pfile, const char __user *buf, size_t length, lof
 	int flag = 0;
 	int pomeraj = 0;
 	int ret;
+    int i = 0;
 	char str1[50];
 	char str2[50];
 	u32 tmp1, tmp2;
@@ -384,7 +385,6 @@ ssize_t fpu_write(struct file *pfile, const char __user *buf, size_t length, lof
    	}
 
 	buff[length] = '\0';
-    int i = 0;
 	for(i = 0; buff[i] != '\0'; i++) {
 		if(buff[i] == ';') {
 			brojac++;
