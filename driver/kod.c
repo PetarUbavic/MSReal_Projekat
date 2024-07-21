@@ -30,14 +30,6 @@ MODULE_LICENSE("Dual BSD/GPL");
 #define      BUFF_SIZE 	    200
 #define      ARRAY_SIZE  	5
 
-//** Global variables **//
-int endRead = 0;
-int cntr = 0;
-int cntrIn = 0;
-int cntrOut = 0;
-int posIn = 0;
-int posOut = 0;
-
 
 //** DMA defines **//
 #define MAX_PKT_LEN				4
@@ -55,6 +47,15 @@ int posOut = 0;
 #define DMACR_RESET				1<<2
 #define IOC_IRQ_EN				1<<12
 #define ERR_IRQ_EN				1<<14
+
+
+//** Global variables **//
+int endRead = 0;
+int cntr = 0;
+int cntrIn = 0;
+int cntrOut = 0;
+int posIn = 0;
+int posOut = 0;
 
 
 //** Function Declerations **//
@@ -279,7 +280,7 @@ static int fpu_probe(struct platform_device *pdev)  {
 	}
 
 	enable_irq(dma_p->irq_num);
-	dma_init0(dma_p->base_addr);
+	dma_init(dma_p->base_addr);
 	printk(KERN_NOTICE "[fpu_probe] fpu platform driver registered - dma\n");
 	
     return 0;
@@ -329,8 +330,8 @@ ssize_t fpu_read(struct file *pfile, char __user *buf, size_t length, loff_t *of
 		endRead = 0;
 		return 0;
 	}
-	if(pos_out > 0) {
-		if(cntrOut < pos_out) {
+	if(posOut > 0) {
+		if(cntrOut < posOut) {
 			length = scnprintf(buff, BUFF_SIZE, "		RES %d: %#x\n", (cntrOut + 1), izlazni_niz[cntrOut]);
 			ret = copy_to_user(buf, buff, length);
 			if(ret) {
@@ -339,11 +340,11 @@ ssize_t fpu_read(struct file *pfile, char __user *buf, size_t length, loff_t *of
 			}
 			cntrOut++;
 		}
-		if(cntrOut == pos_out) {
+		if(cntrOut == posOut) {
 			endRead = 1;
 			cntrOut = 0;
-			pos_out = 0;
-			pos_in = 0;
+			posOut = 0;
+			posIn = 0;
 			cntrIn = 0;
 			cntr = 0;
 		}
@@ -379,7 +380,7 @@ ssize_t fpu_write(struct file *pfile, const char __user *buf, size_t length, lof
 		}
 	}
 
-	if(pos_in >= (ARRAY_SIZE*2 - 1)) {
+	if(posIn >= (ARRAY_SIZE*2 - 1)) {
 		cntr = 1;
 		printk(KERN_WARNING "[fpu_write] Driver is already full\n");
 		goto label1;
@@ -390,20 +391,20 @@ ssize_t fpu_write(struct file *pfile, const char __user *buf, size_t length, lof
 			flag = 1;
 			break;
 		}
-		if(pos_in < (NIZ_SIZE*2-1)) {
+		if(posIn < (NIZ_SIZE*2-1)) {
 			ret = sscanf(buff + pomeraj, "%50[^,], %50[^;];", str1, str2);
 			if(ret != 2) {
 				printk(KERN_WARNING "[fpu_write] Parsing failed\n");
        				return -EFAULT;
 			}
 			sscanf(str1, "%x", &tmp1);
-			ulazni_niz[pos_in] = tmp1;
-			printk(KERN_INFO "[fpu_write] BROJ %d: %#x\n", (pos_in + 1), ulazni_niz[pos_in]);	
-			pos_in++;
+			ulazni_niz[posIn] = tmp1;
+			printk(KERN_INFO "[fpu_write] BROJ %d: %#x\n", (posIn + 1), ulazni_niz[posIn]);	
+			posIn++;
 			sscanf(str2, "%x", &tmp2);
-			ulazni_niz[pos_in] = tmp2;
-			printk(KERN_INFO "[fpu_write] BROJ %d: %#x\n", (pos_in + 1), ulazni_niz[pos_in]);
-			pos_in++; 
+			ulazni_niz[posIn] = tmp2;
+			printk(KERN_INFO "[fpu_write] BROJ %d: %#x\n", (posIn + 1), ulazni_niz[posIn]);
+			posIn++; 
 			pomeraj = pomeraj +  strlen(str1) + strlen(str2) + 3;
 			--brojac;
 		}
@@ -484,7 +485,7 @@ unsigned int dma_simple_read(dma_addr_t RxBufferPtr, unsigned int pkt_len, void 
 	iowrite32((u32)TxBufferPtr, base_address + S2MM_DA_REG);
 	iowrite32(pkt_len, base_address + S2MM_LENGTH_REG);
 	while(transaction_over1 == 1);
-	if(cntrIn < (pos_in - 1)) {
+	if(cntrIn < (posIn - 1)) {
 		*tx_vir_buffer = ulazni_niz[cntrIn++];
 		dma_simple_write(tx_phy_buffer, MAX_PKT_LEN, dma_p->base_addr);
 	} 
@@ -511,9 +512,9 @@ static irqreturn_t dma_S2MM_isr(int irq, void* dev_id){
 	IrqStatus = ioread32(dma_p->base_addr + S2MM_STATUS_REG);
 	iowrite32(IrqStatus | 0x00007000, dma_p->base_addr + S2MM_STATUS_REG);
 	printk(KERN_INFO "[dma_isr] Finished DMA S2MM transaction!\n");
-	izlazni_niz[pos_out] = *tx_vir_buffer;
-	printk(KERN_INFO "[fpu_write] RESULT %d: %#x\n", (pos_out + 1), izlazni_niz[pos_out]);
-	pos_out++;
+	izlazni_niz[posOut] = *tx_vir_buffer;
+	printk(KERN_INFO "[fpu_write] RESULT %d: %#x\n", (posOut + 1), izlazni_niz[posOut]);
+	posOut++;
 	transaction_over1 = 0;
 	return IRQ_HANDLED;
 }
