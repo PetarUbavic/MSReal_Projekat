@@ -26,13 +26,14 @@ MODULE_AUTHOR("Petar Ubavic, Jovan Ikic");
 MODULE_DESCRIPTION("FPU Exp Driver");
 MODULE_LICENSE("Dual BSD/GPL");
 
-#define      DRIVER_NAME     "fpu_driver" 
-#define      BUFF_SIZE 	    200
-#define      ARR_SIZE  	5
+#define      DRIVER_NAME        "fpu_driver" 
+#define      BUFF_SIZE 	        200
+#define      ARR_SIZE  	        5
 
 
 //** DMA defines **//
 #define MAX_PKT_LEN				4
+
 #define MM2S_DMACR_REG			0x00
 #define MM2S_SA_REG				0x18
 #define MM2S_LENGTH_REG			0x28
@@ -76,7 +77,7 @@ static irqreturn_t dma_S2MM_isr(int irq, void* dev_id);
 
 int dma_init(void __iomem *base_address);
 unsigned int dma_simple_write(dma_addr_t TxBufferPtr, unsigned int pkt_len, void __iomem *base_address); 
-unsigned int dma_simple_read(dma_addr_t TxBufferPtr, unsigned int pkt_len, void __iomem *base_address);
+unsigned int dma_simple_read(dma_addr_t RxBufferPtr, unsigned int pkt_len, void __iomem *base_address);
 
 //** Struct Declarations **//
 
@@ -85,18 +86,11 @@ struct fpu_info {
 	unsigned long mem_end;
 	void __iomem *base_addr;
 	int irq_num;
-    /*/chat
-    struct tasklet_struct dma_tasklet;
-    dma_addr_t tx_phy_buffer;
-    dma_addr_t rx_phy_buffer;
-    void *tx_vir_buffer;
-    void *rx_vir_buffer;
-    *////gpt
 };
 
 dev_t my_dev_id;
 static struct class *my_class;
-static struct platform_device *my_device;
+static struct device *my_device;
 static struct cdev *my_cdev;
 static struct fpu_info *dma_p = NULL;
 
