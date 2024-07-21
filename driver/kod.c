@@ -34,7 +34,7 @@ MODULE_LICENSE("Dual BSD/GPL");
 int endRead = 0;
 int cntr = 0;
 int cntrIn = 0;
-int ctnrOut = 0;
+int cntrOut = 0;
 int posIn = 0;
 int posOut = 0;
 
@@ -330,22 +330,22 @@ ssize_t fpu_read(struct file *pfile, char __user *buf, size_t length, loff_t *of
 		return 0;
 	}
 	if(pos_out > 0) {
-		if(counter_out < pos_out) {
-			length = scnprintf(buff, BUFF_SIZE, "		RES %d: %#x\n", (counter_out + 1), izlazni_niz[counter_out]);
+		if(cntrOut < pos_out) {
+			length = scnprintf(buff, BUFF_SIZE, "		RES %d: %#x\n", (cntrOut + 1), izlazni_niz[cntrOut]);
 			ret = copy_to_user(buf, buff, length);
 			if(ret) {
 				printk(KERN_WARNING "[fpu_read] Copy to user failed\n");
 				return -EFAULT;
 			}
-			counter_out++;
+			cntrOut++;
 		}
-		if(counter_out == pos_out) {
+		if(cntrOut == pos_out) {
 			endRead = 1;
-			counter_out = 0;
+			cntrOut = 0;
 			pos_out = 0;
 			pos_in = 0;
-			cnt_in = 0;
-			cnt = 0;
+			cntrIn = 0;
+			cntr = 0;
 		}
 	}	
 	else {
@@ -379,8 +379,8 @@ ssize_t fpu_write(struct file *pfile, const char __user *buf, size_t length, lof
 		}
 	}
 
-	if(pos_in >= (NIZ_SIZE*2 - 1)) {
-		cnt = 1;
+	if(pos_in >= (ARRAY_SIZE*2 - 1)) {
+		cntr = 1;
 		printk(KERN_WARNING "[fpu_write] Driver is already full\n");
 		goto label1;
 	}
@@ -415,9 +415,9 @@ ssize_t fpu_write(struct file *pfile, const char __user *buf, size_t length, lof
 
 	printk(KERN_INFO "[fpu_write] Succesfully wrote in driver\n");
 	label1:
-		if(cnt == 0  && flag != 1) {
-			cnt++;
-			*tx_vir_buffer = ulazni_niz[cnt_in++];	
+		if(cntr == 0  && flag != 1) {
+			cntr++;
+			*tx_vir_buffer = ulazni_niz[cntrIn++];	
 			dma_simple_write1(tx_phy_buffer, MAX_PKT_LEN, dma0_p->base_addr);
 		}
 		return length;
@@ -468,7 +468,7 @@ unsigned int dma_simple_write(dma_addr_t TxBufferPtr, unsigned int pkt_len, void
 	iowrite32(pkt_len, base_address + MM2S_LENGTH_REG);
 	while(transaction_over0 == 1);
 	printk(KERN_INFO "[dma_simple_write] Successfully wrote in DMA \n");
-	*tx_vir_buffer = ulazni_niz[cnt_in++];
+	*tx_vir_buffer = ulazni_niz[cntrIn++];
 	dma_simple_write(tx_phy_buffer, MAX_PKT_LEN, dma_p->base_addr);		
     return 0;
 	
@@ -484,12 +484,12 @@ unsigned int dma_simple_read(dma_addr_t RxBufferPtr, unsigned int pkt_len, void 
 	iowrite32((u32)TxBufferPtr, base_address + S2MM_DA_REG);
 	iowrite32(pkt_len, base_address + S2MM_LENGTH_REG);
 	while(transaction_over1 == 1);
-	if(cnt_in < (pos_in - 1)) {
-		*tx_vir_buffer = ulazni_niz[cnt_in++];
+	if(cntrIn < (pos_in - 1)) {
+		*tx_vir_buffer = ulazni_niz[cntrIn++];
 		dma_simple_write(tx_phy_buffer, MAX_PKT_LEN, dma_p->base_addr);
 	} 
 	else {
-		cnt = 0;
+		cntr = 0;
 	}
 	printk(KERN_INFO "[dma_simple_read] Successfully read from DMA \n");
 	return 0;
