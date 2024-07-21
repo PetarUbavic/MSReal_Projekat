@@ -171,10 +171,10 @@ static int __init fpu_init(void) {
 	}
 	printk(KERN_INFO "[fpu_init] Module init done\n");
 
-	
+/*
 
     // Set the coherent DMA mask
-    ret = dma_set_coherent_mask(my_device-, DMA_BIT_MASK(32));
+    ret = dma_set_coherent_mask(my_device, DMA_BIT_MASK(32));
     if (ret) {
         printk(KERN_ERR "[fpu_init] Failed to set coherent DMA mask\n");
         platform_device_unregister(my_device);
@@ -199,7 +199,9 @@ static int __init fpu_init(void) {
 	else {
 		printk("[fpu_init] Successfully allocated memory for transaction buffer\n");
 	}
+*/
 	*tx_vir_buffer = 0;
+
 	printk(KERN_INFO "[fpu_init] Memory reset.\n");
 
 	return platform_driver_register(&fpu_driver);
