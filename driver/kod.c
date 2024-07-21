@@ -62,7 +62,7 @@ int posOut = 0;
 
 // DODATAK
 static u32 *fpu_array = NULL;
-static int array_size = 0;
+static int arr_size = 0;
 static int initialized = 0;
 //////////////
 
@@ -411,19 +411,19 @@ ssize_t fpu_write(struct file *pfile, const char __user *buf, size_t length, lof
     kernel_buf[length] = '\0'; // Null-terminate the string
 
     // Check for initialization command
-    if (sscanf(kernel_buf, "N=%d", &array_size) == 1) {
-        if (array_size > 0 && array_size <= MAX_ARRAY_SIZE) {
+    if (sscanf(kernel_buf, "N=%d", &arr_size) == 1) {
+        if (arr_size > 0 && arr_size <= MAX_ARRAY_SIZE) {
             // Allocate and initialize the array
             if (fpu_array != NULL) {
                 kfree(fpu_array); // Free the previous array if it exists
             }
-            fpu_array = kzalloc(array_size * sizeof(u32), GFP_KERNEL);
+            fpu_array = kzalloc(arr_size * sizeof(u32), GFP_KERNEL);
             if (!fpu_array) {
                 printk(KERN_ERR "[fpu_write] Memory allocation failed\n");
                 return -ENOMEM;
             }
             initialized = 1;
-            printk(KERN_INFO "[fpu_write] Array initialized with size %d\n", array_size);
+            printk(KERN_INFO "[fpu_write] Array initialized with size %d\n", arr_size);
         } else {
             printk(KERN_WARNING "[fpu_write] Invalid array size\n");
             return -EINVAL;
@@ -435,7 +435,7 @@ ssize_t fpu_write(struct file *pfile, const char __user *buf, size_t length, lof
             printk(KERN_WARNING "[fpu_write] Array not initialized\n");
             return -EINVAL;
         }
-        if (pos >= 0 && pos < array_size) {
+        if (pos >= 0 && pos < arr_size) {
             fpu_array[pos] = value;
             printk(KERN_INFO "[fpu_write] Position %d updated with value %#010x\n", pos, value);
         } else {
