@@ -270,13 +270,23 @@ static int fpu_probe(struct platform_device *pdev)  {
 	}
 
 	if (request_irq(dma_p->irq_num, dma_MM2S_isr, 0, "dma_device", dma_p)) {
-		printk(KERN_ERR "[fpu_probe] Could not register IRQ %d\n", dma_p->irq_num);
+		printk(KERN_ERR "[fpu_probe] Could not register M2SS IRQ %d\n", dma_p->irq_num);
 		return -EIO;
 		goto error03;
 	}
 
 	else {
-		printk(KERN_INFO "[fpu_probe] Registered IRQ %d\n", dma_p->irq_num);
+		printk(KERN_INFO "[fpu_probe] Registered M2SS IRQ %d\n", dma_p->irq_num);
+	}
+
+    if (request_irq(dma_p->irq_num, dma_S2MM_isr, 0, "dma_device", dma_p)) {
+		printk(KERN_ERR "[fpu_probe] Could not register S2MM IRQ %d\n", dma_p->irq_num);
+		return -EIO;
+		goto error03;
+	}
+
+	else {
+		printk(KERN_INFO "[fpu_probe] Registered S2MM IRQ %d\n", dma_p->irq_num);
 	}
 
 	enable_irq(dma_p->irq_num);
@@ -372,9 +382,9 @@ ssize_t fpu_write(struct file *pfile, const char __user *buf, size_t length, lof
        		 printk(KERN_WARNING "[fpu_write] copy from user failed\n");
        		 return -EFAULT;
    	}
-	buff[length] = EOL;
+	buff[length] = '\0';
 
-	for(int i = 0; buff[i] != EOL; i++) {
+	for(int i = 0; buff[i] != '\0'; i++) {
 		if(buff[i] == ';') {
 			brojac++;
 		}
@@ -419,7 +429,7 @@ ssize_t fpu_write(struct file *pfile, const char __user *buf, size_t length, lof
 		if(cntr == 0  && flag != 1) {
 			cntr++;
 			*tx_vir_buffer = ulazni_niz[cntrIn++];	
-			dma_simple_write1(tx_phy_buffer, MAX_PKT_LEN, dma_p->base_addr);
+			dma_simple_write(tx_phy_buffer, MAX_PKT_LEN, dma_p->base_addr);
 		}
 		return length;
 }
@@ -482,12 +492,12 @@ unsigned int dma_simple_read(dma_addr_t RxBufferPtr, unsigned int pkt_len, void 
 	S2MM_DMACR_value |= DMACR_RUN_STOP; 	
 	transaction_over1 = 1;
 	iowrite32(S2MM_DMACR_value, base_address + S2MM_DMACR_REG);
-	iowrite32((u32)TxBufferPtr, base_address + S2MM_DA_REG);
+	iowrite32((u32)RxBufferPtr, base_address + S2MM_DA_REG);
 	iowrite32(pkt_len, base_address + S2MM_LENGTH_REG);
 	while(transaction_over1 == 1);
 	if(cntrIn < (posIn - 1)) {
 		*tx_vir_buffer = ulazni_niz[cntrIn++];
-		dma_simple_write(tx_phy_buffer, MAX_PKT_LEN, dma_p->base_addr);
+		dma_simple_write(rx_phy_buffer, MAX_PKT_LEN, dma_p->base_addr);
 	} 
 	else {
 		cntr = 0;
