@@ -60,6 +60,12 @@ int posIn = 0;
 int posOut = 0;
 
 
+// DODATAK
+static u32 *fpu_array = NULL;
+static int array_size = 0;
+static int initialized = 0;
+//////////////
+
 //** Function Declerations **//
 
 static int  __init fpu_init(void);
