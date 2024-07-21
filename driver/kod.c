@@ -96,7 +96,7 @@ struct fpu_info {
 
 dev_t my_dev_id;
 static struct class *my_class;
-static struct device *my_device;
+static struct platform_device *my_device;
 static struct cdev *my_cdev;
 static struct fpu_info *dma_p = NULL;
 
