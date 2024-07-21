@@ -174,7 +174,7 @@ static int __init fpu_init(void) {
 	
 
     // Set the coherent DMA mask
-    ret = dma_set_coherent_mask(&my_device->dev, DMA_BIT_MASK(32));
+    ret = dma_set_coherent_mask(my_device-, DMA_BIT_MASK(32));
     if (ret) {
         printk(KERN_ERR "[fpu_init] Failed to set coherent DMA mask\n");
         platform_device_unregister(my_device);
@@ -182,7 +182,7 @@ static int __init fpu_init(void) {
     }
 
     // Optionally, set the DMA mask
-    ret = dma_set_mask(&my_device->dev, DMA_BIT_MASK(32));
+    ret = dma_set_mask(my_device, DMA_BIT_MASK(32));
     if (ret) {
         printk(KERN_ERR "[fpu_init] Failed to set DMA mask\n");
         platform_device_unregister(my_device);
