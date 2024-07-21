@@ -354,38 +354,56 @@ int fpu_close(struct inode *pinode, struct file *pfile) {
 
 ssize_t fpu_read(struct file *pfile, char __user *buf, size_t length, loff_t *offset) {		
 
-	char buff[BUFF_SIZE];
-	int ret = 0; 
+	static int finished = 0;
+    char *kernel_buf;
+    int i;
+    int ret;
+    size_t len = 0;
 
-	if(endRead) {
-		endRead = 0;
-		return 0;
-	}
-	if(posOut > 0) {
-		if(cntrOut < posOut) {
-			length = scnprintf(buff, BUFF_SIZE, "		RES %d: %#x\n", (cntrOut + 1), izlazni_niz[cntrOut]);
-			ret = copy_to_user(buf, buff, length);
-			if(ret) {
-				printk(KERN_WARNING "[fpu_read] Copy to user failed\n");
-				return -EFAULT;
-			}
-			cntrOut++;
-		}
-		if(cntrOut == posOut) {
-			endRead = 1;
-			cntrOut = 0;
-			posOut = 0;
-			posIn = 0;
-			cntrIn = 0;
-			cntr = 0;
-		}
-	}	
-	else {
-		printk(KERN_INFO "[fpu_read] Driver is empty\n");
-		return -EFAULT;
-	}
-	printk(KERN_INFO "[fpu_read] Succesfully read driver\n");
-	return length;
+    // Check if the array is initialized
+    if (!initialized) {
+        printk(KERN_WARNING "[fpu_read] Array not initialized\n");
+        return 0;
+    }
+
+    // Check if read is already done
+    if (finished) {
+        finished = 0;  // Reset for the next call
+        return 0;
+    }
+
+    // Allocate memory for the kernel buffer
+    kernel_buf = kmalloc(BUFF_SIZE, GFP_KERNEL);
+    if (!kernel_buf) {
+        printk(KERN_ERR "[fpu_read] Memory allocation failed\n");
+        return -ENOMEM;
+    }
+
+    // Populate the kernel buffer with the array values
+    for (i = 0; i < arr_size; i++) {
+        len += snprintf(kernel_buf + len, BUFF_SIZE - len, "0x%08x", fpu_array[i]);
+        if (i < arr_size - 1) {
+            len += snprintf(kernel_buf + len, BUFF_SIZE - len, ", ");
+        }
+        if (len >= BUFF_SIZE) {
+            printk(KERN_WARNING "[fpu_read] Buffer size exceeded\n");
+            kfree(kernel_buf);
+            return -EFAULT;
+        }
+    }
+
+    // Copy data to user space
+    ret = copy_to_user(buf, kernel_buf, len);
+    if (ret) {
+        printk(KERN_WARNING "[fpu_read] Copy to user failed\n");
+        kfree(kernel_buf);
+        return -EFAULT;
+    }
+
+    kfree(kernel_buf);
+    finished = 1;  // Mark read as done
+
+    return len;
 }
 
 ssize_t fpu_write(struct file *pfile, const char __user *buf, size_t length, loff_t *offset) {	
