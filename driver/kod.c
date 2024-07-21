@@ -28,7 +28,7 @@ MODULE_LICENSE("Dual BSD/GPL");
 
 #define      DRIVER_NAME     "fpu_driver" 
 #define      BUFF_SIZE 	    200
-#define      ARRAY_SIZE  	5
+#define      ARR_SIZE  	5
 
 
 //** DMA defines **//
@@ -132,8 +132,8 @@ u32 *tx_vir_buffer;
 u32 *rx_vir_buffer;
 volatile int transaction_over0 = 0;
 volatile int transaction_over1 = 0;
-u32 izlazni_niz[ARRAY_SIZE];
-u32 ulazni_niz[ARRAY_SIZE * 2];
+u32 izlazni_niz[ARR_SIZE];
+u32 ulazni_niz[ARR_SIZE * 2];
 
 //** Init & Exit Functions **//     /* VEZBA 5*/
 
@@ -372,26 +372,26 @@ ssize_t fpu_write(struct file *pfile, const char __user *buf, size_t length, lof
        		 printk(KERN_WARNING "[fpu_write] copy from user failed\n");
        		 return -EFAULT;
    	}
-	buff[length] = '\0';
+	buff[length] = EOL;
 
-	for(int i = 0; buff[i] != '\0'; i++) {
+	for(int i = 0; buff[i] != EOL; i++) {
 		if(buff[i] == ';') {
 			brojac++;
 		}
 	}
 
-	if(posIn >= (ARRAY_SIZE*2 - 1)) {
+	if(posIn >= (ARR_SIZE*2 - 1)) {
 		cntr = 1;
 		printk(KERN_WARNING "[fpu_write] Driver is already full\n");
 		goto label1;
 	}
 	while(brojac != 1) {
-		if(brojac > (NIZ_SIZE + 1)) {
+		if(brojac > (ARR_SIZE + 1)) {
 			printk(KERN_WARNING "[fpu_write] Too much requests for multiplication\n");
 			flag = 1;
 			break;
 		}
-		if(posIn < (NIZ_SIZE*2-1)) {
+		if(posIn < (ARR_SIZE*2-1)) {
 			ret = sscanf(buff + pomeraj, "%50[^,], %50[^;];", str1, str2);
 			if(ret != 2) {
 				printk(KERN_WARNING "[fpu_write] Parsing failed\n");
@@ -419,7 +419,7 @@ ssize_t fpu_write(struct file *pfile, const char __user *buf, size_t length, lof
 		if(cntr == 0  && flag != 1) {
 			cntr++;
 			*tx_vir_buffer = ulazni_niz[cntrIn++];	
-			dma_simple_write1(tx_phy_buffer, MAX_PKT_LEN, dma0_p->base_addr);
+			dma_simple_write1(tx_phy_buffer, MAX_PKT_LEN, dma_p->base_addr);
 		}
 		return length;
 }
