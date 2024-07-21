@@ -154,11 +154,11 @@ static int __init fpu_init(void) {
 	printk(KERN_INFO "[fpu_init] Successful class chardev create!\n");
 	
 	// Create device
-	my_device = device_create(my_class, NULL, MKDEV(MAJOR(my_dev_id), 0), NULL, "fpuexp");
+	my_device = device_create(my_class, NULL, MKDEV(MAJOR(my_dev_id), 0), NULL, "fpu_exp");
 	if(my_device == NULL) {
 		goto fail_1;
 	}
-	printk(KERN_INFO "[fpu_init] Device fpuexp created\n");
+	printk(KERN_INFO "[fpu_init] Device fpu_exp created\n");
 	
 	// Allocate and add character device
 	my_cdev = cdev_alloc();	
