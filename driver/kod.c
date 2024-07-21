@@ -171,7 +171,25 @@ static int __init fpu_init(void) {
 	}
 	printk(KERN_INFO "[fpu_init] Module init done\n");
 
-	// Allocate coherent DMA buffer
+	
+
+    // Set the coherent DMA mask
+    ret = dma_set_coherent_mask(&my_device->dev, DMA_BIT_MASK(32));
+    if (ret) {
+        printk(KERN_ERR "[fpu_init] Failed to set coherent DMA mask\n");
+        platform_device_unregister(my_device);
+        return ret;
+    }
+
+    // Optionally, set the DMA mask
+    ret = dma_set_mask(&my_device->dev, DMA_BIT_MASK(32));
+    if (ret) {
+        printk(KERN_ERR "[fpu_init] Failed to set DMA mask\n");
+        platform_device_unregister(my_device);
+        return ret;
+    }
+
+    // Allocate coherent DMA buffer
 	tx_vir_buffer = dma_alloc_coherent(my_device, MAX_PKT_LEN, &tx_phy_buffer, GFP_DMA | GFP_KERNEL);
 	printk(KERN_INFO "[fpu_init] Virtual and physical addresses coherent starting at %#x and ending at %#x\n", tx_phy_buffer, tx_phy_buffer+(uint)(MAX_PKT_LEN));
 	if(!tx_vir_buffer) {
