@@ -382,9 +382,10 @@ ssize_t fpu_write(struct file *pfile, const char __user *buf, size_t length, lof
        		 printk(KERN_WARNING "[fpu_write] copy from user failed\n");
        		 return -EFAULT;
    	}
-	buff[length] = '\0';
 
-	for(int i = 0; buff[i] != '\0'; i++) {
+	buff[length] = '\0';
+    int i = 0;
+	for(i = 0; buff[i] != '\0'; i++) {
 		if(buff[i] == ';') {
 			brojac++;
 		}
