@@ -1,406 +1,576 @@
+//** Kernel headers **//
+
 #include <linux/kernel.h>
-#include <linux/string.h>
 #include <linux/module.h>
+#include <linux/string.h>
+#include <linux/types.h>
 #include <linux/init.h>
 #include <linux/fs.h>
-#include <linux/types.h>
 #include <linux/cdev.h>
 #include <linux/kdev_t.h>
+#include <linux/device.h>
+#include <linux/io.h>
+#include <linux/ioport.h>
+#include <linux/interrupt.h>
 #include <linux/uaccess.h>
 #include <linux/errno.h>
-#include <linux/device.h>
+#include <linux/delay.h>
+#include <linux/slab.h>
+#include <linux/platform_device.h>
+#include <linux/of.h>
+#include <linux/dma-mapping.h>  
+#include <linux/mm.h>
 
-#include <linux/io.h> //iowrite ioread
-#include <linux/slab.h>//kmalloc kfree
-#include <linux/platform_device.h>//platform driver
-#include <linux/of.h>//of_match_table
-#include <linux/ioport.h>//ioremap
-
-#include <linux/dma-mapping.h>  //dma access
-#include <linux/mm.h>  //dma access
-#include <linux/interrupt.h>  //interrupt handlers
-
-MODULE_AUTHOR ("FTN");
-MODULE_DESCRIPTION("Test Driver for VGA controller IP.");
+//** Driver Information **//
+MODULE_AUTHOR("Petar Ubavic, Jovan Ikic");
+MODULE_DESCRIPTION("FPU Exp Driver");
 MODULE_LICENSE("Dual BSD/GPL");
-MODULE_ALIAS("custom:vga_dma controller");
 
-#define DEVICE_NAME "vga_dma"
-#define DRIVER_NAME "vga_dma_driver"
-#define BUFF_SIZE 20
-#define MAX_PKT_LEN 640*480*4
+#define      DRIVER_NAME        "fpu_driver" 
+#define      BUFF_SIZE 	        128
+#define      MAX_ARRAY_SIZE     256
+#define      ARR_SIZE  	        5
 
-//*******************FUNCTION PROTOTYPES************************************
-static int vga_dma_probe(struct platform_device *pdev);
-static int vga_dma_open(struct inode *i, struct file *f);
-static int vga_dma_close(struct inode *i, struct file *f);
-static ssize_t vga_dma_read(struct file *f, char __user *buf, size_t len, loff_t *off);
-static ssize_t vga_dma_write(struct file *f, const char __user *buf, size_t length, loff_t *off);
-static ssize_t vga_dma_mmap(struct file *f, struct vm_area_struct *vma_s);
-static int __init vga_dma_init(void);
-static void __exit vga_dma_exit(void);
-static int vga_dma_remove(struct platform_device *pdev);
 
-static irqreturn_t dma_isr(int irq,void*dev_id);
+//** DMA defines **//
+#define MAX_PKT_LEN				4
+
+#define MM2S_DMACR_REG			0x00
+#define MM2S_SA_REG				0x18
+#define MM2S_LENGTH_REG			0x28
+#define MM2S_STATUS_REG			0x04
+
+#define S2MM_DMACR_REG			0x30
+#define S2MM_DA_REG				0x48
+#define S2MM_LENGTH_REG			0x58
+#define S2MM_STATUS_REG			0x34
+
+#define DMACR_RUN_STOP			1
+#define DMACR_RESET				1<<2
+#define IOC_IRQ_EN				1<<12
+#define ERR_IRQ_EN				1<<14
+
+
+//** Global variables **//
+int endRead = 0;
+int cntr = 0;
+int cntrIn = 0;
+int cntrOut = 0;
+int posIn = 0;
+int posOut = 0;
+
+
+// DODATAK
+static u32 *fpu_array = NULL;
+static int arr_size = 0;
+static int initialized = 0;
+//////////////
+
+//** Function Declerations **//
+
+static int  __init fpu_init(void);
+static void __exit fpu_exit(void);
+
+static int  fpu_probe(struct platform_device *pdev);
+static int  fpu_remove(struct platform_device *pdev);
+int         fpu_open(struct inode *pinode, struct file *pfile);
+int         fpu_close(struct inode *pinode, struct file *pfile);
+ssize_t     fpu_read(struct file *pfile, char __user *buffer, size_t length, loff_t *offset);
+ssize_t     fpu_write(struct file *pfile, const char __user *buffer, size_t length, loff_t *offset);
+static int  fpu_mmap(struct file *f, struct vm_area_struct *vma_s);
+
+static irqreturn_t dma_MM2S_isr(int irq, void* dev_id);
+static irqreturn_t dma_S2MM_isr(int irq, void* dev_id);
+
 int dma_init(void __iomem *base_address);
-u32 dma_simple_write(dma_addr_t TxBufferPtr, u32 max_pkt_len, void __iomem *base_address); 
+unsigned int dma_simple_write(dma_addr_t TxBufferPtr, unsigned int pkt_len, void __iomem *base_address); 
+unsigned int dma_simple_read(dma_addr_t RxBufferPtr, unsigned int pkt_len, void __iomem *base_address);
 
-//*********************GLOBAL VARIABLES*************************************
-struct vga_dma_info {
-  unsigned long mem_start;
-  unsigned long mem_end;
-  void __iomem *base_addr;
-  int irq_num;
+//** Struct Declarations **//
+
+struct fpu_info {
+	unsigned long mem_start;
+	unsigned long mem_end;
+	void __iomem *base_addr;
+	int irq_num;
 };
 
-static struct cdev *my_cdev;
-static dev_t my_dev_id;
+dev_t my_dev_id;
 static struct class *my_class;
 static struct device *my_device;
-static struct vga_dma_info *vp = NULL;
+static struct cdev *my_cdev;
+static struct fpu_info *dma_p = NULL;
 
-static struct file_operations my_fops =
-{
-	.owner = THIS_MODULE,
-	.open = vga_dma_open,
-	.release = vga_dma_close,
-	.read = vga_dma_read,
-	.write = vga_dma_write,
-	.mmap = vga_dma_mmap
+struct file_operations my_fops = {
+	.owner 		= THIS_MODULE,
+	.open 		= fpu_open,
+	.release 	= fpu_close,
+	.read 		= fpu_read,
+	.write 		= fpu_write,
+	.mmap		= fpu_mmap
 };
 
-static struct of_device_id vga_dma_of_match[] = {
-	{ .compatible = "xlnx,axi-dma-mm2s-channel", },
-	{ .compatible = "vga_dma"},
+static struct of_device_id fpu_of_match[] = {
+	{ .compatible = "xlnx,axi-dma-0", },
 	{ /* end of list */ },
 };
-MODULE_DEVICE_TABLE(of, vga_dma_of_match);
 
-static struct platform_driver vga_dma_driver = {
+MODULE_DEVICE_TABLE(of, fpu_of_match);
+
+static struct platform_driver fpu_driver = {
 	.driver = {
-		.name = DRIVER_NAME,
-		.owner = THIS_MODULE,
-		.of_match_table	= vga_dma_of_match,
+		.name 			= DRIVER_NAME,
+		.owner 			= THIS_MODULE,
+		.of_match_table	= fpu_of_match,
 	},
-	.probe		= vga_dma_probe,
-	.remove	= vga_dma_remove,
+	.probe		= fpu_probe,
+	.remove		= fpu_remove,
 };
 
-
 dma_addr_t tx_phy_buffer;
+dma_addr_t rx_phy_buffer;
 u32 *tx_vir_buffer;
+u32 *rx_vir_buffer;
+volatile int transaction_over0 = 0;
+volatile int transaction_over1 = 0;
+u32 izlazni_niz[ARR_SIZE];
+u32 ulazni_niz[ARR_SIZE * 2];
 
-//***************************************************************************
-// PROBE AND REMOVE
-static int vga_dma_probe(struct platform_device *pdev)
-{
+//** Init & Exit Functions **//     /* VEZBA 5*/
+
+/*This function is called when module is loadaed in kernel */       
+static int __init fpu_init(void) {
+
+	int ret = 0;
+	printk(KERN_INFO "[fpu_init] Initialize Module \"%s\"\n", DRIVER_NAME);
+	
+	// Allocate character device region
+	ret = alloc_chrdev_region(&my_dev_id, 0, 1, "fpu_region");
+	if(ret) {
+		printk(KERN_ALERT "[fpu_init] Failed CHRDEV!\n");
+		return -1;
+	}
+	printk(KERN_INFO "[fpu_init] Successful CHRDEV!\n");
+	
+	// Create device class
+	my_class = class_create(THIS_MODULE, "fpu_class");
+	if(my_class == NULL) {
+		printk(KERN_ALERT "[fpu_init] Failed class create!\n");
+		goto fail_0;
+	}
+	printk(KERN_INFO "[fpu_init] Successful class chardev create!\n");
+	
+	// Create device
+	my_device = device_create(my_class, NULL, MKDEV(MAJOR(my_dev_id), 0), NULL, "fpu_driver");
+	if(my_device == NULL) {
+		goto fail_1;
+	}
+	printk(KERN_ALERT "[fpu_init] Device fpu_driver created\n");
+	
+	// Allocate and add character device
+	my_cdev = cdev_alloc();	
+	my_cdev->ops = &my_fops;
+	my_cdev->owner = THIS_MODULE;
+	ret = cdev_add(my_cdev, my_dev_id, 1);
+	if(ret) {
+		printk(KERN_ERR "[fpu_init] Failed to add cdev\n");
+		goto fail_2;
+	}
+	printk(KERN_INFO "[fpu_init] Module init done\n");
+
+/*
+
+    // Set the coherent DMA mask
+    ret = dma_set_coherent_mask(my_device, DMA_BIT_MASK(32));
+    if (ret) {
+        printk(KERN_ERR "[fpu_init] Failed to set coherent DMA mask\n");
+        platform_device_unregister(my_device);
+        return ret;
+    }
+
+    // Optionally, set the DMA mask
+    ret = dma_set_mask(my_device, DMA_BIT_MASK(32));
+    if (ret) {
+        printk(KERN_ERR "[fpu_init] Failed to set DMA mask\n");
+        platform_device_unregister(my_device);
+        return ret;
+    }
+*/
+    // Allocate coherent DMA buffer
+	tx_vir_buffer = dma_alloc_coherent(my_device, MAX_PKT_LEN, &tx_phy_buffer, GFP_DMA | GFP_KERNEL);
+	printk(KERN_INFO "[fpu_init] Virtual and physical addresses coherent starting at %#x and ending at %#x\n", tx_phy_buffer, tx_phy_buffer+(uint)(MAX_PKT_LEN));
+	if(!tx_vir_buffer) {
+		printk(KERN_ALERT "[fpu_init] Could not allocate dma_alloc_coherent");
+		goto fail_3;
+	}
+	else {
+		printk("[fpu_init] Successfully allocated memory for transmission buffer\n");
+	}
+
+	*tx_vir_buffer = 0;
+
+	printk(KERN_INFO "[fpu_init] Memory reset.\n");
+
+    ret = platform_driver_register(&fpu_driver);
+    if (ret) {
+        printk(KERN_ERR "[fpu_init] Failed to register platform driver: %d\n", ret);
+        goto fail_3;
+    }
+
+    printk(KERN_INFO "[fpu_init] Succesfully registered platform driver\n");
+
+	return 0;
+
+	// Error handling and cleanup       //fail_3 nema na vezbama 5, ovde ima zog dma_alloc_coherent funkcije
+	fail_3:
+		cdev_del(my_cdev);
+	fail_2:
+		device_destroy(my_class, MKDEV(MAJOR(my_dev_id),0));
+	fail_1:
+		class_destroy(my_class);
+	fail_0:
+		unregister_chrdev_region(my_dev_id, 1);
+	return -1;
+} 
+
+/*This function is called when module is removed from kernel*/
+static void __exit fpu_exit(void) {
+
+    /* Exit Device Module */
+	dma_free_coherent(NULL, MAX_PKT_LEN, &tx_phy_buffer, GFP_DMA | GFP_KERNEL);
+    platform_driver_unregister(&fpu_driver); //ove funckije nema u kodu sa 5ih vezbi, ali je pozivamo kako bi se "bezbednije" uklonio driver
+	cdev_del(my_cdev);
+	device_destroy(my_class, MKDEV(MAJOR(my_dev_id),0));
+	class_destroy(my_class);
+	unregister_chrdev_region(my_dev_id, 1);
+	printk(KERN_INFO "[fpu_exit] Goodbye Kernel\"%s\".\n", DRIVER_NAME);
+
+}
+
+module_init(fpu_init);
+module_exit(fpu_exit);
+
+//** Probe & Remove Functions **//  /* VEZBE 9 i 10*/
+
+static int fpu_probe(struct platform_device *pdev)  {
+
 	struct resource *r_mem;
 	int rc = 0;
 
-	printk(KERN_INFO "vga_dma_probe: Probing\n");
-	// Get phisical register adress space from device tree
+    printk(KERN_INFO "[fpu_probe] Entered Probe\n");
+
 	r_mem = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-	if (!r_mem) {
-		printk(KERN_ALERT "vga_dma_probe: Failed to get reg resource\n");
-		return -ENODEV;
+	if(!r_mem){
+	    printk(KERN_ALERT "[fpu_probe] Failed to get reg resource.\n");
+	    return -ENODEV;
 	}
-	// Get memory for structure vga_dma_info
-	vp = (struct vga_dma_info *) kmalloc(sizeof(struct vga_dma_info), GFP_KERNEL);
-	if (!vp) {
-		printk(KERN_ALERT "vga_dma_probe: Could not allocate memory for structure vga_dma_info\n");
+	printk(KERN_INFO "[fpu_probe] Probing dma_p\n");
+
+	dma_p = (struct fpu_info *) kmalloc(sizeof(struct fpu_info), GFP_KERNEL);
+	
+    if(!dma_p) {
+		printk(KERN_ALERT "[fpu_probe] Could not allocate dma device\n");
 		return -ENOMEM;
 	}
-	// Put phisical adresses in timer_info structure
-	vp->mem_start = r_mem->start;
-	vp->mem_end = r_mem->end;
 
-	// Reserve that memory space for this driver
-	if (!request_mem_region(vp->mem_start,vp->mem_end - vp->mem_start + 1, DRIVER_NAME))
-	{
-		printk(KERN_ALERT "vga_dma_probe: Could not lock memory region at %p\n",(void *)vp->mem_start);
+	dma_p->mem_start = r_mem->start;
+	dma_p->mem_end = r_mem->end;
+	
+    if(!request_mem_region(dma_p->mem_start, dma_p->mem_end - dma_p->mem_start + 1,	"dma_device")) {
+		printk(KERN_ALERT "[fpu_probe] Could not lock memory region at %p\n",(void *)dma_p->mem_start);
 		rc = -EBUSY;
-		goto error1;
-	}    
-	// Remap phisical to virtual adresses
+		goto error01;
+	}
 
-	vp->base_addr = ioremap(vp->mem_start, vp->mem_end - vp->mem_start + 1);
-	if (!vp->base_addr) {
-		printk(KERN_ALERT "vga_dma_probe: Could not allocate memory for remapping\n");
+	dma_p->base_addr = ioremap(dma_p->mem_start, dma_p->mem_end - dma_p->mem_start + 1);
+	
+    if (!dma_p->base_addr) {
+		printk(KERN_ALERT "[fpu_probe] Could not allocate memory\n");
 		rc = -EIO;
-		goto error2;
+		goto error02;
 	}
 
-	// Get irq num 
-	vp->irq_num = platform_get_irq(pdev, 0);
-	if(!vp->irq_num)
-	{
-		printk(KERN_ERR "vga_dma_probe: Could not get IRQ resource\n");
+	printk(KERN_INFO "[fpu_probe] dma base address start at %#x\n", (u32)dma_p->base_addr);
+
+	dma_p->irq_num = platform_get_irq(pdev, 0);
+	
+    if(!dma_p->irq_num) {
+		printk(KERN_ERR "[fpu_probe] Could not get IRQ resource for dma\n");
 		rc = -ENODEV;
-		goto error2;
+		goto error03;
 	}
 
-	if (request_irq(vp->irq_num, dma_isr, 0, DEVICE_NAME, NULL)) {
-		printk(KERN_ERR "vga_dma_probe: Could not register IRQ %d\n", vp->irq_num);
+	if (request_irq(dma_p->irq_num, dma_MM2S_isr, 0, "dma_device", dma_p)) {
+		printk(KERN_ERR "[fpu_probe] Could not register M2SS IRQ %d\n", dma_p->irq_num);
 		return -EIO;
-		goto error3;
+		goto error03;
 	}
+
 	else {
-		printk(KERN_INFO "vga_dma_probe: Registered IRQ %d\n", vp->irq_num);
+		printk(KERN_INFO "[fpu_probe] Registered M2SS IRQ %d\n", dma_p->irq_num);
 	}
 
-	/* INIT DMA */
-	dma_init(vp->base_addr);
-	dma_simple_write(tx_phy_buffer, MAX_PKT_LEN, vp->base_addr); // helper function, defined later
-
-	printk(KERN_NOTICE "vga_dma_probe: VGA platform driver registered\n");
-	return 0;//ALL OK
-
-error3:
-	iounmap(vp->base_addr);
-error2:
-	release_mem_region(vp->mem_start, vp->mem_end - vp->mem_start + 1);
-	kfree(vp);
-error1:
-	return rc;
-
-}
-
-static int vga_dma_remove(struct platform_device *pdev)
-{
-	u32 reset = 0x00000004;
-	// writing to MM2S_DMACR register. Seting reset bit (3. bit)
-	printk(KERN_INFO "vga_dma_probe: resseting");
-	iowrite32(reset, vp->base_addr); 
-
-	free_irq(vp->irq_num, NULL);
-	iounmap(vp->base_addr);
-	release_mem_region(vp->mem_start, vp->mem_end - vp->mem_start + 1);
-	kfree(vp);
-	printk(KERN_INFO "vga_dma_probe: VGA DMA removed");
-	return 0;
-}
-
-//***************************************************
-// IMPLEMENTATION OF FILE OPERATION FUNCTIONS
-static int vga_dma_open(struct inode *i, struct file *f)
-{
-	//printk(KERN_INFO "vga_dma opened\n");
-	return 0;
-}
-
-static int vga_dma_close(struct inode *i, struct file *f)
-{
-	//printk(KERN_INFO "vga_dma closed\n");
-	return 0;
-}
-
-static ssize_t vga_dma_read(struct file *f, char __user *buf, size_t len, loff_t *off)
-{
-	//printk("vga_dma read\n");
-	return 0;
-}
-
-static ssize_t vga_dma_write(struct file *f, const char __user *buf, size_t length, loff_t *off)
-{	
-	char buff[BUFF_SIZE];
-	int ret = 0;
-	unsigned int xpos=0,ypos=0;
-	unsigned long long rgb=0;
-	unsigned char rgb_buff[10];  
-	ret = copy_from_user(buff, buf, length);  
-	if(ret){
-		printk("copy from user failed \n");
-		return -EFAULT;
-	}  
-	buff[length] = '\0';
-
-
-	sscanf(buff,"%d,%d,%s", &xpos, &ypos, rgb_buff);  
-	ret = kstrtoull(rgb_buff, 0, &rgb);
-
-	if(ret != -EINVAL) //checking for parsing error
-	{
-		if (xpos > 639)
-		{
-			printk(KERN_WARNING "VGA_write: X_axis position exceeded, maximum is 639 and minimum 0 \n");
-		}
-		else if (ypos > 479)
-		{
-			printk(KERN_WARNING "VGA_write: Y_axis position exceeded, maximum is 479 and minimum 0 \n");
-		}
-		else
-		{
-			tx_vir_buffer[640*ypos + xpos] = (u32)rgb;
-		}
+    if (request_irq(dma_p->irq_num, dma_S2MM_isr, 0, "dma_device", dma_p)) {
+		printk(KERN_ERR "[fpu_probe] Could not register S2MM IRQ %d\n", dma_p->irq_num);
+		return -EIO;
+		goto error03;
 	}
-	else
-	{
-		printk(KERN_WARNING "VGA_write: Wrong write format, expected \"xpos,ypos,rgb\"\n");
-		// return -EINVAL; //parsing error
-	}        
-	return length;
 
+	else {
+		printk(KERN_INFO "[fpu_probe] Registered S2MM IRQ %d\n", dma_p->irq_num);
+	}
+
+	enable_irq(dma_p->irq_num);
+	dma_init(dma_p->base_addr);
+	printk(KERN_NOTICE "[fpu_probe] fpu platform driver registered - dma\n");
+	
+    return 0;
+
+	error03:
+		iounmap(dma_p->base_addr);
+	error02:
+		release_mem_region(dma_p->mem_start, dma_p->mem_end - dma_p->mem_start + 1);
+		kfree(dma_p);
+	error01:
+		return rc;		
 }
 
-static ssize_t vga_dma_mmap(struct file *f, struct vm_area_struct *vma_s)
-{
+static int fpu_remove(struct platform_device *pdev)  {
+
+	printk(KERN_ALERT "[fpu_remove] dma_p device platform driver removed\n");
+	iowrite32(0, dma_p->base_addr);
+	free_irq(dma_p->irq_num, dma_p);
+	iounmap(dma_p->base_addr);
+	release_mem_region(dma_p->mem_start, dma_p->mem_end - dma_p->mem_start + 1);
+	kfree(dma_p);
+	printk(KERN_INFO "[fpu_remove] Succesfully removed dma_p device platform driver\n");
+	
+	return 0;
+}
+
+//** Open & Close Functions **//  /**/
+
+int fpu_open(struct inode *pinode, struct file *pfile) {
+	printk(KERN_INFO "[fpu_open] Succesfully opened driver\n");
+	return 0;
+}
+
+int fpu_close(struct inode *pinode, struct file *pfile) {
+	printk(KERN_INFO "[fpu_close] Succesfully closed driver\n");
+	return 0;
+}
+
+//** Read & Write Functions **//  /**/
+
+ssize_t fpu_read(struct file *pfile, char __user *buf, size_t length, loff_t *offset) {		
+
+	static int finished = 0;
+    char *kernel_buf;
+    int i;
+    int ret;
+    size_t len = 0;
+
+    // Check if the array is initialized
+    if (!initialized) {
+        printk(KERN_WARNING "[fpu_read] Array not initialized\n");
+        return 0;
+    }
+
+    // Check if read is already done
+    if (finished) {
+        finished = 0;  // Reset for the next call
+        return 0;
+    }
+
+    // Allocate memory for the kernel buffer
+    kernel_buf = kmalloc(BUFF_SIZE, GFP_KERNEL);
+    if (!kernel_buf) {
+        printk(KERN_ERR "[fpu_read] Memory allocation failed\n");
+        return -ENOMEM;
+    }
+
+    // Populate the kernel buffer with the array values
+    for (i = 0; i < arr_size; i++) {
+        len += snprintf(kernel_buf + len, BUFF_SIZE - len, "0x%08x", fpu_array[i]);
+        if (i < arr_size - 1) {
+            len += snprintf(kernel_buf + len, BUFF_SIZE - len, ", ");
+        }
+        if (len >= BUFF_SIZE) {
+            printk(KERN_WARNING "[fpu_read] Buffer size exceeded\n");
+            kfree(kernel_buf);
+            return -EFAULT;
+        }
+    }
+
+    // Copy data to user space
+    ret = copy_to_user(buf, kernel_buf, len);
+    if (ret) {
+        printk(KERN_WARNING "[fpu_read] Copy to user failed\n");
+        kfree(kernel_buf);
+        return -EFAULT;
+    }
+
+    kfree(kernel_buf);
+    finished = 1;  // Mark read as done
+
+    return len;
+}
+
+ssize_t fpu_write(struct file *pfile, const char __user *buf, size_t length, loff_t *offset) {	
+
+	char kernel_buf[BUFF_SIZE];
+    int ret;
+    int pos;
+    u32 value;
+
+    // Check if the buffer length is within limits
+    if (length >= BUFF_SIZE) {
+        printk(KERN_WARNING "[fpu_write] Input too large\n");
+        return -EFAULT;
+    }
+
+    // Copy data from user space
+    ret = copy_from_user(kernel_buf, buf, length);
+    if (ret) {
+        printk(KERN_WARNING "[fpu_write] Copy from user failed\n");
+        return -EFAULT;
+    }
+    
+    kernel_buf[length] = '\0'; // Null-terminate the string
+
+    // Check for initialization command
+    if (sscanf(kernel_buf, "N=%d", &arr_size) == 1) {
+        if (arr_size > 0 && arr_size <= MAX_ARRAY_SIZE) {
+            // Allocate and initialize the array
+            if (fpu_array != NULL) {
+                kfree(fpu_array); // Free the previous array if it exists
+            }
+            fpu_array = kzalloc(arr_size * sizeof(u32), GFP_KERNEL);
+            if (!fpu_array) {
+                printk(KERN_ERR "[fpu_write] Memory allocation failed\n");
+                return -ENOMEM;
+            }
+            initialized = 1;
+            printk(KERN_INFO "[fpu_write] Array initialized with size %d\n", arr_size);
+        } else {
+            printk(KERN_WARNING "[fpu_write] Invalid array size\n");
+            return -EINVAL;
+        }
+    } 
+    // Check for position=value command
+    else if (sscanf(kernel_buf, "Pozicija=%d=0x%x", &pos, &value) == 2) {
+        if (!initialized) {
+            printk(KERN_WARNING "[fpu_write] Array not initialized\n");
+            return -EINVAL;
+        }
+        if (pos >= 0 && pos < arr_size) {
+            fpu_array[pos] = value;
+            printk(KERN_INFO "[fpu_write] Position %d updated with value %#010x\n", pos, value);
+        } else {
+            printk(KERN_WARNING "[fpu_write] Invalid position\n");
+            return -EINVAL;
+        }
+    } 
+    // Invalid command
+    else {
+        printk(KERN_WARNING "[fpu_write] Invalid command format\n");
+        return -EINVAL;
+    }
+
+    return length;
+}
+
+//** Mmap Function **//  /* VEZBA 12*/
+
+static int fpu_mmap(struct file *f, struct vm_area_struct *vma_s) {
+
 	int ret = 0;
 	long length = vma_s->vm_end - vma_s->vm_start;
-
-	//printk(KERN_INFO "DMA TX Buffer is being memory mapped\n");
-
-	if(length > MAX_PKT_LEN)
-	{
-		return -EIO;
-		printk(KERN_ERR "Trying to mmap more space than it's allocated\n");
-	}
-
+	printk(KERN_INFO "[fpu_dma_mmap] DMA TX Buffer is being memory mapped\n");
 	ret = dma_mmap_coherent(NULL, vma_s, tx_vir_buffer, tx_phy_buffer, length);
-	if(ret<0)
-	{
-		printk(KERN_ERR "memory map failed\n");
+	if(ret < 0) {
+		printk(KERN_ERR "[fpu_dma_mmap] Memory map DMA failed\n");
 		return ret;
 	}
 	return 0;
 }
 
-/****************************************************/
-// IMPLEMENTATION OF DMA related functions
+//** DMA Functions **//  /*VEZBA 12*/
 
-static irqreturn_t dma_isr(int irq,void*dev_id)
-{
-	u32 IrqStatus;  
-	/* Read pending interrupts */
-	IrqStatus = ioread32(vp->base_addr + 4);//read irq status from MM2S_DMASR register
-	iowrite32(IrqStatus | 0x00007000, vp->base_addr + 4);//clear irq status in MM2S_DMASR register
-	//(clearing is done by writing 1 on 13. bit in MM2S_DMASR (IOC_Irq)
+int dma_init(void __iomem *base_address) {
 
-	/*Send a transaction*/
-	dma_simple_write(tx_phy_buffer, MAX_PKT_LEN, vp->base_addr); //My function that starts a DMA transaction
-	return IRQ_HANDLED;;
-}
-
-int dma_init(void __iomem *base_address)
-{
-	u32 reset = 0x00000004;
-	u32 IOC_IRQ_EN; 
-	u32 ERR_IRQ_EN;
-	u32 MM2S_DMACR_reg;
-	u32 en_interrupt;
-
-	IOC_IRQ_EN = 1 << 12; // this is IOC_IrqEn bit in MM2S_DMACR register
-	ERR_IRQ_EN = 1 << 14; // this is Err_IrqEn bit in MM2S_DMACR register
-
-	iowrite32(reset, base_address); // writing to MM2S_DMACR register. Seting reset bit (3. bit)
-
-	MM2S_DMACR_reg = ioread32(base_address); // Reading from MM2S_DMACR register inside DMA
-	en_interrupt = MM2S_DMACR_reg | IOC_IRQ_EN | ERR_IRQ_EN;// seting 13. and 15.th bit in MM2S_DMACR
-	iowrite32(en_interrupt, base_address); // writing to MM2S_DMACR register  
+	u32 MM2S_DMACR_val = 0;
+	u32 enInterrupt = 0;
+	iowrite32(0x0, base_address + MM2S_DMACR_REG);
+	iowrite32(DMACR_RESET, base_address + MM2S_DMACR_REG);
+	MM2S_DMACR_val = ioread32(base_address + MM2S_DMACR_REG);
+	enInterrupt = MM2S_DMACR_val | IOC_IRQ_EN | ERR_IRQ_EN;
+	iowrite32(enInterrupt, base_address + MM2S_DMACR_REG);	
+	printk(KERN_INFO "[dma_init] Successfully initialized DMA \n");
 	return 0;
 }
 
-u32 dma_simple_write(dma_addr_t TxBufferPtr, u32 max_pkt_len, void __iomem *base_address) {
-	u32 MM2S_DMACR_reg;
+unsigned int dma_simple_write(dma_addr_t TxBufferPtr, unsigned int pkt_len, void __iomem *base_address) {
 
-	MM2S_DMACR_reg = ioread32(base_address); // READ from MM2S_DMACR register
+	u32 MM2S_DMACR_val = 0;
+	u32 enInterrupt = 0;
+	MM2S_DMACR_val = ioread32(base_address + MM2S_DMACR_REG);
+	enInterrupt = MM2S_DMACR_val | IOC_IRQ_EN | ERR_IRQ_EN;
+	iowrite32(enInterrupt, base_address + MM2S_DMACR_REG);
+	MM2S_DMACR_val = ioread32(base_address + MM2S_DMACR_REG);
+	MM2S_DMACR_val |= DMACR_RUN_STOP;
+	transaction_over0 = 1;
+	iowrite32(MM2S_DMACR_val, base_address + MM2S_DMACR_REG);
+	iowrite32((u32)TxBufferPtr, base_address + MM2S_SA_REG);
+	iowrite32(pkt_len, base_address + MM2S_LENGTH_REG);
+	while(transaction_over0 == 1);
+	printk(KERN_INFO "[dma_simple_write] Successfully wrote in DMA \n");
+	*tx_vir_buffer = ulazni_niz[cntrIn++];
+	dma_simple_write(tx_phy_buffer, MAX_PKT_LEN, dma_p->base_addr);		
+    return 0;
+	
+}
 
-	iowrite32(0x1 |  MM2S_DMACR_reg, base_address); // set RS bit in MM2S_DMACR register (this bit starts the DMA)
+unsigned int dma_simple_read(dma_addr_t RxBufferPtr, unsigned int pkt_len, void __iomem *base_address) {
 
-	iowrite32((u32)TxBufferPtr, base_address + 24); // Write into MM2S_SA register the value of TxBufferPtr.
-	// With this, the DMA knows from where to start.
-
-	iowrite32(max_pkt_len, base_address + 40); // Write into MM2S_LENGTH register. This is the length of a tranaction.
-	// In our case this is the size of the image (640*480*4)
+	u32 S2MM_DMACR_value;
+	S2MM_DMACR_value = ioread32(base_address + S2MM_DMACR_REG);
+	S2MM_DMACR_value |= DMACR_RUN_STOP; 	
+	transaction_over1 = 1;
+	iowrite32(S2MM_DMACR_value, base_address + S2MM_DMACR_REG);
+	iowrite32((u32)RxBufferPtr, base_address + S2MM_DA_REG);
+	iowrite32(pkt_len, base_address + S2MM_LENGTH_REG);
+	while(transaction_over1 == 1);
+	if(cntrIn < (posIn - 1)) {
+		*tx_vir_buffer = ulazni_niz[cntrIn++];
+		dma_simple_write(rx_phy_buffer, MAX_PKT_LEN, dma_p->base_addr);
+	} 
+	else {
+		cntr = 0;
+	}
+	printk(KERN_INFO "[dma_simple_read] Successfully read from DMA \n");
 	return 0;
 }
 
+static irqreturn_t dma_MM2S_isr(int irq, void* dev_id) {
 
-
-//***************************************************
-// INIT AND EXIT FUNCTIONS OF THE DRIVER
-
-static int __init vga_dma_init(void)
-{
-
-	int ret = 0;
-	int i = 0;
-
-	printk(KERN_INFO "vga_dma_init: Initialize Module \"%s\"\n", DEVICE_NAME);
-	ret = alloc_chrdev_region(&my_dev_id, 0, 1, "VGA_region");
-	if (ret)
-	{
-		printk(KERN_ALERT "vga_dma_init: Failed CHRDEV!\n");
-		return -1;
-	}
-	printk(KERN_INFO "vga_dma_init: Successful CHRDEV!\n");
-	my_class = class_create(THIS_MODULE, "VGA_drv");
-	if (my_class == NULL)
-	{
-		printk(KERN_ALERT "vga_dma_init: Failed class create!\n");
-		goto fail_0;
-	}
-	printk(KERN_INFO "vga_dma_init: Successful class chardev1 create!\n");
-	my_device = device_create(my_class, NULL, MKDEV(MAJOR(my_dev_id),0), NULL, "vga_dma");
-	if (my_device == NULL)
-	{
-		goto fail_1;
-	}
-
-	printk(KERN_INFO "vga_dma_init: Device created\n");
-
-	my_cdev = cdev_alloc();	
-	my_cdev->ops = &my_fops;
-	my_cdev->owner = THIS_MODULE;
-	ret = cdev_add(my_cdev, my_dev_id, 1);
-	if (ret)
-	{
-		printk(KERN_ERR "vga_dma_init: Failed to add cdev\n");
-		goto fail_2;
-	}
-	printk(KERN_INFO "vga_dma_init: Module init done\n");
-
-	tx_vir_buffer = dma_alloc_coherent(NULL, MAX_PKT_LEN, &tx_phy_buffer, GFP_DMA | GFP_KERNEL);
-	if(!tx_vir_buffer){
-		printk(KERN_ALERT "vga_dma_init: Could not allocate dma_alloc_coherent for img");
-		goto fail_3;
-	}
-	else
-		printk("vga_dma_init: Successfully allocated memory for dma transaction buffer\n");
-	for (i = 0; i < MAX_PKT_LEN/4;i++)
-		tx_vir_buffer[i] = 0x00000000;
-	printk(KERN_INFO "vga_dma_init: DMA memory reset.\n");
-	return platform_driver_register(&vga_dma_driver);
-
-fail_3:
-	cdev_del(my_cdev);
-fail_2:
-	device_destroy(my_class, MKDEV(MAJOR(my_dev_id),0));
-fail_1:
-	class_destroy(my_class);
-fail_0:
-	unregister_chrdev_region(my_dev_id, 1);
-	return -1;
-
-} 
-
-static void __exit vga_dma_exit(void)  		
-{
-	//Reset DMA memory
-	int i =0;
-	for (i = 0; i < MAX_PKT_LEN/4; i++) 
-		tx_vir_buffer[i] = 0x00000000;
-	printk(KERN_INFO "vga_dma_exit: DMA memory reset\n");
-
-	// Exit Device Module
-	platform_driver_unregister(&vga_dma_driver);
-	cdev_del(my_cdev);
-	device_destroy(my_class, MKDEV(MAJOR(my_dev_id),0));
-	class_destroy(my_class);
-	unregister_chrdev_region(my_dev_id, 1);
-	dma_free_coherent(NULL, MAX_PKT_LEN, tx_vir_buffer, tx_phy_buffer);
-	printk(KERN_INFO "vga_dma_exit: Exit device module finished\"%s\".\n", DEVICE_NAME);
+	unsigned int IrqStatus;  
+	IrqStatus = ioread32(dma_p->base_addr + MM2S_STATUS_REG);
+	iowrite32(IrqStatus | 0x00007000, dma_p->base_addr + MM2S_STATUS_REG);
+	printk(KERN_INFO "[dma_isr] Finished DMA MM2S transaction!\n");
+	transaction_over0 = 0;
+	return IRQ_HANDLED;
 }
 
-module_init(vga_dma_init);
-module_exit(vga_dma_exit);
+static irqreturn_t dma_S2MM_isr(int irq, void* dev_id){
 
+	unsigned int IrqStatus;  
+	IrqStatus = ioread32(dma_p->base_addr + S2MM_STATUS_REG);
+	iowrite32(IrqStatus | 0x00007000, dma_p->base_addr + S2MM_STATUS_REG);
+	printk(KERN_INFO "[dma_isr] Finished DMA S2MM transaction!\n");
+	izlazni_niz[posOut] = *tx_vir_buffer;
+	printk(KERN_INFO "[fpu_write] RESULT %d: %#x\n", (posOut + 1), izlazni_niz[posOut]);
+	posOut++;
+	transaction_over1 = 0;
+	return IRQ_HANDLED;
+}
