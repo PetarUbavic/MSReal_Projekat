@@ -257,6 +257,8 @@ static int fpu_probe(struct platform_device *pdev)  {
 	struct resource *r_mem;
 	int rc = 0;
 
+    printk(KERN_INFO "[fpu_probe] Entered Probe\n");
+
 	r_mem = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 	if(!r_mem){
 	    printk(KERN_ALERT "[fpu_probe] Failed to get reg resource.\n");
