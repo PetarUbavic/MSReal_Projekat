@@ -53,7 +53,7 @@ struct file_operations my_fops =
 };
 
 static struct of_device_id led_of_match[] = {
-  { .compatible = "led_gpio", },
+  { .compatible = "axi_gpio_0", },
   { /* end of list */ },
 };
 
