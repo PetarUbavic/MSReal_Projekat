@@ -254,7 +254,7 @@ static int fpu_probe(struct platform_device *pdev)  {
 	    printk(KERN_ALERT "[fpu_probe] Failed to get reg resource.\n");
 	    return -ENODEV;
 	}
-	printk(KERN_ALERT "[fpu_probe] Probing dma_p\n");
+	printk(KERN_INFO "[fpu_probe] Probing dma_p\n");
 
 	dma_p = (struct fpu_info *) kmalloc(sizeof(struct fpu_info), GFP_KERNEL);
 	
