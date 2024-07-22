@@ -1,121 +1,387 @@
-#include <linux/module.h>
+//** Kernel headers **//
+
 #include <linux/kernel.h>
+#include <linux/module.h>
+#include <linux/string.h>
+#include <linux/types.h>
+#include <linux/init.h>
 #include <linux/fs.h>
-#include <linux/uaccess.h>
-#include <linux/slab.h>
 #include <linux/cdev.h>
+#include <linux/kdev_t.h>
 #include <linux/device.h>
-#include <linux/dma-mapping.h>
-#include <linux/dmaengine.h>
-#include <linux/completion.h>
+#include <linux/io.h>
+#include <linux/ioport.h>
+#include <linux/interrupt.h>
+#include <linux/uaccess.h>
+#include <linux/errno.h>
+#include <linux/delay.h>
+#include <linux/slab.h>
+#include <linux/platform_device.h>
+#include <linux/of.h>
+#include <linux/dma-mapping.h>  
+#include <linux/mm.h>
 
-#define MAX_ARRAY_SIZE 256
-#define BUFF_SIZE 4096
+//** Driver Information **//
+MODULE_AUTHOR("Petar Ubavic, Jovan Ikic");
+MODULE_DESCRIPTION("FPU Exp Driver");
+MODULE_LICENSE("Dual BSD/GPL");
 
-static dev_t dev;
-static struct cdev cdev;
-static struct class *cl;
+#define      DRIVER_NAME        "fpu_driver" 
+#define      BUFF_SIZE 	        128
+#define      MAX_ARRAY_SIZE     256
+#define      ARR_SIZE  	        5
 
+
+//** DMA defines **//
+#define MAX_PKT_LEN				4
+
+#define MM2S_DMACR_REG			0x00
+#define MM2S_SA_REG				0x18
+#define MM2S_LENGTH_REG			0x28
+#define MM2S_STATUS_REG			0x04
+
+#define S2MM_DMACR_REG			0x30
+#define S2MM_DA_REG				0x48
+#define S2MM_LENGTH_REG			0x58
+#define S2MM_STATUS_REG			0x34
+
+#define DMACR_RUN_STOP			1
+#define DMACR_RESET				1<<2
+#define IOC_IRQ_EN				1<<12
+#define ERR_IRQ_EN				1<<14
+
+
+//** Global variables **//
+int endRead = 0;
+int cntr = 0;
+int cntrIn = 0;
+int cntrOut = 0;
+int posIn = 0;
+int posOut = 0;
+
+
+// DODATAK
 static u32 *fpu_array = NULL;
 static int arr_size = 0;
 static int initialized = 0;
+//////////////
 
-static dma_addr_t dma_tx_addr;
-static dma_addr_t dma_rx_addr;
-static u32 *dma_tx_buffer;
-static u32 *dma_rx_buffer;
+//** Function Declerations **//
 
-static struct dma_chan *dma_tx_chan;
-static struct dma_chan *dma_rx_chan;
-static struct completion dma_tx_complete;
-static struct completion dma_rx_complete;
+static int  __init fpu_init(void);
+static void __exit fpu_exit(void);
 
-static void dma_tx_callback(void *completion)
-{
-    complete(completion);
-}
+static int  fpu_probe(struct platform_device *pdev);
+static int  fpu_remove(struct platform_device *pdev);
+int         fpu_open(struct inode *pinode, struct file *pfile);
+int         fpu_close(struct inode *pinode, struct file *pfile);
+ssize_t     fpu_read(struct file *pfile, char __user *buffer, size_t length, loff_t *offset);
+ssize_t     fpu_write(struct file *pfile, const char __user *buffer, size_t length, loff_t *offset);
+static int  fpu_mmap(struct file *f, struct vm_area_struct *vma_s);
 
-static void dma_rx_callback(void *completion)
-{
-    complete(completion);
-}
+static irqreturn_t dma_MM2S_isr(int irq, void* dev_id);
+static irqreturn_t dma_S2MM_isr(int irq, void* dev_id);
 
-ssize_t fpu_write(struct file *pfile, const char __user *buf, size_t length, loff_t *offset)
-{
-    char kbuf[32];
-    int pos;
-    u32 val;
-    int ret;
+int dma_init(void __iomem *base_address);
+unsigned int dma_simple_write(dma_addr_t TxBufferPtr, unsigned int pkt_len, void __iomem *base_address); 
+unsigned int dma_simple_read(dma_addr_t RxBufferPtr, unsigned int pkt_len, void __iomem *base_address);
 
-    if (length > sizeof(kbuf) - 1)
-        return -EINVAL;
+//** Struct Declarations **//
 
-    if (copy_from_user(kbuf, buf, length))
-        return -EFAULT;
+struct fpu_info {
+	unsigned long mem_start;
+	unsigned long mem_end;
+	void __iomem *base_addr;
+	int irq_num;
+};
 
-    kbuf[length] = '\0';
+dev_t my_dev_id;
+static struct class *my_class;
+static struct device *my_device;
+static struct cdev *my_cdev;
+static struct fpu_info *dma_p = NULL;
 
-    if (sscanf(kbuf, "N=%d", &arr_size) == 1) {
-        if (arr_size < 0 || arr_size > MAX_ARRAY_SIZE)
-            return -EINVAL;
+struct file_operations my_fops = {
+	.owner 		= THIS_MODULE,
+	.open 		= fpu_open,
+	.release 	= fpu_close,
+	.read 		= fpu_read,
+	.write 		= fpu_write,
+	.mmap		= fpu_mmap
+};
 
-        if (fpu_array)
-            kfree(fpu_array);
+static struct of_device_id fpu_of_match[] = {
+	{ .compatible = "xlnx,axi-dma-0", },
+	{ /* end of list */ },
+};
 
-        fpu_array = kzalloc(arr_size * sizeof(u32), GFP_KERNEL);
-        if (!fpu_array)
-            return -ENOMEM;
+MODULE_DEVICE_TABLE(of, fpu_of_match);
 
-        initialized = 1;
-        return length;
-    } else if (sscanf(kbuf, "%d=0x%x", &pos, &val) == 2) {
-        if (pos < 0 || pos >= arr_size)
-            return -EINVAL;
+static struct platform_driver fpu_driver = {
+	.driver = {
+		.name 			= DRIVER_NAME,
+		.owner 			= THIS_MODULE,
+		.of_match_table	= fpu_of_match,
+	},
+	.probe		= fpu_probe,
+	.remove		= fpu_remove,
+};
 
-        if (!initialized)
-            return -EINVAL;
+dma_addr_t tx_phy_buffer;
+dma_addr_t rx_phy_buffer;
+u32 *tx_vir_buffer;
+u32 *rx_vir_buffer;
+volatile int transaction_over0 = 0;
+volatile int transaction_over1 = 0;
+u32 izlazni_niz[ARR_SIZE];
+u32 ulazni_niz[ARR_SIZE * 2];
 
-        fpu_array[pos] = val;
-        return length;
+//** Init & Exit Functions **//     /* VEZBA 5*/
+
+/*This function is called when module is loadaed in kernel */       
+static int __init fpu_init(void) {
+
+	int ret = 0;
+	printk(KERN_INFO "[fpu_init] Initialize Module \"%s\"\n", DRIVER_NAME);
+	
+	// Allocate character device region
+	ret = alloc_chrdev_region(&my_dev_id, 0, 1, "fpu_region");
+	if(ret) {
+		printk(KERN_ALERT "[fpu_init] Failed CHRDEV!\n");
+		return -1;
+	}
+	printk(KERN_INFO "[fpu_init] Successful CHRDEV!\n");
+	
+	// Create device class
+	my_class = class_create(THIS_MODULE, "fpu_class");
+	if(my_class == NULL) {
+		printk(KERN_ALERT "[fpu_init] Failed class create!\n");
+		goto fail_0;
+	}
+	printk(KERN_INFO "[fpu_init] Successful class chardev create!\n");
+	
+	// Create device
+	my_device = device_create(my_class, NULL, MKDEV(MAJOR(my_dev_id), 0), NULL, "fpu_exp");
+	if(my_device == NULL) {
+		goto fail_1;
+	}
+	printk(KERN_INFO "[fpu_init] Device fpu_exp created\n");
+	
+	// Allocate and add character device
+	my_cdev = cdev_alloc();	
+	my_cdev->ops = &my_fops;
+	my_cdev->owner = THIS_MODULE;
+	ret = cdev_add(my_cdev, my_dev_id, 1);
+	if(ret) {
+		printk(KERN_ERR "[fpu_init] Failed to add cdev\n");
+		goto fail_2;
+	}
+	printk(KERN_INFO "[fpu_init] Module init done\n");
+
+/*
+
+    // Set the coherent DMA mask
+    ret = dma_set_coherent_mask(my_device, DMA_BIT_MASK(32));
+    if (ret) {
+        printk(KERN_ERR "[fpu_init] Failed to set coherent DMA mask\n");
+        platform_device_unregister(my_device);
+        return ret;
     }
 
-    return -EINVAL;
+    // Optionally, set the DMA mask
+    ret = dma_set_mask(my_device, DMA_BIT_MASK(32));
+    if (ret) {
+        printk(KERN_ERR "[fpu_init] Failed to set DMA mask\n");
+        platform_device_unregister(my_device);
+        return ret;
+    }
+*/
+    // Allocate coherent DMA buffer
+	tx_vir_buffer = dma_alloc_coherent(NULL, MAX_PKT_LEN, &tx_phy_buffer, GFP_DMA | GFP_KERNEL);
+	printk(KERN_INFO "[fpu_init] Virtual and physical addresses coherent starting at %#x and ending at %#x\n", tx_phy_buffer, tx_phy_buffer+(uint)(MAX_PKT_LEN));
+	if(!tx_vir_buffer) {
+		printk(KERN_ALERT "[fpu_init] Could not allocate dma_alloc_coherent");
+		goto fail_3;
+	}
+	else {
+		printk("[fpu_init] Successfully allocated memory for transmission buffer\n");
+	}
+
+	*tx_vir_buffer = 0;
+
+	printk(KERN_INFO "[fpu_init] Memory reset.\n");
+
+	return platform_driver_register(&fpu_driver);
+
+	// Error handling and cleanup       //fail_3 nema na vezbama 5, ovde ima zog dma_alloc_coherent funkcije
+	fail_3:
+		cdev_del(my_cdev);
+	fail_2:
+		device_destroy(my_class, MKDEV(MAJOR(my_dev_id),0));
+	fail_1:
+		class_destroy(my_class);
+	fail_0:
+		unregister_chrdev_region(my_dev_id, 1);
+	return -1;
+} 
+
+/*This function is called when module is removed from kernel*/
+static void __exit fpu_exit(void) {
+
+    /* Exit Device Module */
+	dma_free_coherent(NULL, MAX_PKT_LEN, &tx_phy_buffer, GFP_DMA | GFP_KERNEL);
+    platform_driver_unregister(&fpu_driver); //ove funckije nema u kodu sa 5ih vezbi, ali je pozivamo kako bi se "bezbednije" uklonio driver
+	cdev_del(my_cdev);
+	device_destroy(my_class, MKDEV(MAJOR(my_dev_id),0));
+	class_destroy(my_class);
+	unregister_chrdev_region(my_dev_id, 1);
+	printk(KERN_INFO "[fpu_exit] Goodbye Kernel\"%s\".\n", DRIVER_NAME);
+
 }
 
-ssize_t fpu_read(struct file *pfile, char __user *buf, size_t length, loff_t *offset)
-{
-    static int finished = 0;
+module_init(fpu_init);
+module_exit(fpu_exit);
+
+//** Probe & Remove Functions **//  /* VEZBE 9 i 10*/
+
+static int fpu_probe(struct platform_device *pdev)  {
+
+	struct resource *r_mem;
+	int rc = 0;
+
+	r_mem = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+	if(!r_mem){
+	    printk(KERN_ALERT "[fpu_probe] Failed to get reg resource.\n");
+	    return -ENODEV;
+	}
+	printk(KERN_ALERT "[fpu_probe] Probing dma_p\n");
+
+	dma_p = (struct fpu_info *) kmalloc(sizeof(struct fpu_info), GFP_KERNEL);
+	
+    if(!dma_p) {
+		printk(KERN_ALERT "[fpu_probe] Could not allocate dma device\n");
+		return -ENOMEM;
+	}
+
+	dma_p->mem_start = r_mem->start;
+	dma_p->mem_end = r_mem->end;
+	
+    if(!request_mem_region(dma_p->mem_start, dma_p->mem_end - dma_p->mem_start + 1,	"dma_device")) {
+		printk(KERN_ALERT "[fpu_probe] Could not lock memory region at %p\n",(void *)dma_p->mem_start);
+		rc = -EBUSY;
+		goto error01;
+	}
+
+	dma_p->base_addr = ioremap(dma_p->mem_start, dma_p->mem_end - dma_p->mem_start + 1);
+	
+    if (!dma_p->base_addr) {
+		printk(KERN_ALERT "[fpu_probe] Could not allocate memory\n");
+		rc = -EIO;
+		goto error02;
+	}
+
+	printk(KERN_INFO "[fpu_probe] dma base address start at %#x\n", (u32)dma_p->base_addr);
+
+	dma_p->irq_num = platform_get_irq(pdev, 0);
+	
+    if(!dma_p->irq_num) {
+		printk(KERN_ERR "[fpu_probe] Could not get IRQ resource for dma\n");
+		rc = -ENODEV;
+		goto error03;
+	}
+
+	if (request_irq(dma_p->irq_num, dma_MM2S_isr, 0, "dma_device", dma_p)) {
+		printk(KERN_ERR "[fpu_probe] Could not register M2SS IRQ %d\n", dma_p->irq_num);
+		return -EIO;
+		goto error03;
+	}
+
+	else {
+		printk(KERN_INFO "[fpu_probe] Registered M2SS IRQ %d\n", dma_p->irq_num);
+	}
+
+    if (request_irq(dma_p->irq_num, dma_S2MM_isr, 0, "dma_device", dma_p)) {
+		printk(KERN_ERR "[fpu_probe] Could not register S2MM IRQ %d\n", dma_p->irq_num);
+		return -EIO;
+		goto error03;
+	}
+
+	else {
+		printk(KERN_INFO "[fpu_probe] Registered S2MM IRQ %d\n", dma_p->irq_num);
+	}
+
+	enable_irq(dma_p->irq_num);
+	dma_init(dma_p->base_addr);
+	printk(KERN_NOTICE "[fpu_probe] fpu platform driver registered - dma\n");
+	
+    return 0;
+
+	error03:
+		iounmap(dma_p->base_addr);
+	error02:
+		release_mem_region(dma_p->mem_start, dma_p->mem_end - dma_p->mem_start + 1);
+		kfree(dma_p);
+	error01:
+		return rc;		
+}
+
+static int fpu_remove(struct platform_device *pdev)  {
+
+	printk(KERN_ALERT "[fpu_remove] dma_p device platform driver removed\n");
+	iowrite32(0, dma_p->base_addr);
+	free_irq(dma_p->irq_num, dma_p);
+	iounmap(dma_p->base_addr);
+	release_mem_region(dma_p->mem_start, dma_p->mem_end - dma_p->mem_start + 1);
+	kfree(dma_p);
+	printk(KERN_INFO "[fpu_remove] Succesfully removed dma_p device platform driver\n");
+	
+	return 0;
+}
+
+//** Open & Close Functions **//  /**/
+
+int fpu_open(struct inode *pinode, struct file *pfile) {
+	printk(KERN_INFO "[fpu_open] Succesfully opened driver\n");
+	return 0;
+}
+
+int fpu_close(struct inode *pinode, struct file *pfile) {
+	printk(KERN_INFO "[fpu_close] Succesfully closed driver\n");
+	return 0;
+}
+
+//** Read & Write Functions **//  /**/
+
+ssize_t fpu_read(struct file *pfile, char __user *buf, size_t length, loff_t *offset) {		
+
+	static int finished = 0;
     char *kernel_buf;
     int i;
     int ret;
     size_t len = 0;
 
+    // Check if the array is initialized
     if (!initialized) {
         printk(KERN_WARNING "[fpu_read] Array not initialized\n");
         return 0;
     }
 
+    // Check if read is already done
     if (finished) {
-        finished = 0;
+        finished = 0;  // Reset for the next call
         return 0;
     }
 
+    // Allocate memory for the kernel buffer
     kernel_buf = kmalloc(BUFF_SIZE, GFP_KERNEL);
     if (!kernel_buf) {
         printk(KERN_ERR "[fpu_read] Memory allocation failed\n");
         return -ENOMEM;
     }
 
-    memcpy(dma_tx_buffer, fpu_array, arr_size * sizeof(u32));
-
-    dma_async_issue_pending(dma_tx_chan);
-    wait_for_completion(&dma_tx_complete);
-
-    dma_async_issue_pending(dma_rx_chan);
-    wait_for_completion(&dma_rx_complete);
-
+    // Populate the kernel buffer with the array values
     for (i = 0; i < arr_size; i++) {
-        len += snprintf(kernel_buf + len, BUFF_SIZE - len, "0x%08x", dma_rx_buffer[i]);
+        len += snprintf(kernel_buf + len, BUFF_SIZE - len, "0x%08x", fpu_array[i]);
         if (i < arr_size - 1) {
             len += snprintf(kernel_buf + len, BUFF_SIZE - len, ", ");
         }
@@ -126,6 +392,7 @@ ssize_t fpu_read(struct file *pfile, char __user *buf, size_t length, loff_t *of
         }
     }
 
+    // Copy data to user space
     ret = copy_to_user(buf, kernel_buf, len);
     if (ret) {
         printk(KERN_WARNING "[fpu_read] Copy to user failed\n");
@@ -134,105 +401,166 @@ ssize_t fpu_read(struct file *pfile, char __user *buf, size_t length, loff_t *of
     }
 
     kfree(kernel_buf);
-    finished = 1;
+    finished = 1;  // Mark read as done
 
     return len;
 }
 
-static int __init fpu_init(void)
-{
+ssize_t fpu_write(struct file *pfile, const char __user *buf, size_t length, loff_t *offset) {	
+
+	char kernel_buf[BUFF_SIZE];
     int ret;
-    struct device *dev_ret;
-    dma_cap_mask_t mask;
+    int pos;
+    u32 value;
 
-    if ((ret = alloc_chrdev_region(&dev, 0, 1, "fpu_exp")) < 0) {
-        return ret;
-    }
-    cdev_init(&cdev, &fpu_fops);
-    if ((ret = cdev_add(&cdev, dev, 1)) < 0) {
-        unregister_chrdev_region(dev, 1);
-        return ret;
-    }
-    if (IS_ERR(cl = class_create(THIS_MODULE, "char"))) {
-        cdev_del(&cdev);
-        unregister_chrdev_region(dev, 1);
-        return PTR_ERR(cl);
-    }
-    if (IS_ERR(dev_ret = device_create(cl, NULL, dev, NULL, "fpu_exp"))) {
-        class_destroy(cl);
-        cdev_del(&cdev);
-        unregister_chrdev_region(dev, 1);
-        return PTR_ERR(dev_ret);
+    // Check if the buffer length is within limits
+    if (length >= BUFF_SIZE) {
+        printk(KERN_WARNING "[fpu_write] Input too large\n");
+        return -EFAULT;
     }
 
-    dma_tx_buffer = dma_alloc_coherent(NULL, MAX_ARRAY_SIZE * sizeof(u32), &dma_tx_addr, GFP_KERNEL);
-    if (!dma_tx_buffer) {
-        ret = -ENOMEM;
-        goto err_alloc_tx;
+    // Copy data from user space
+    ret = copy_from_user(kernel_buf, buf, length);
+    if (ret) {
+        printk(KERN_WARNING "[fpu_write] Copy from user failed\n");
+        return -EFAULT;
+    }
+    
+    kernel_buf[length] = '\0'; // Null-terminate the string
+
+    // Check for initialization command
+    if (sscanf(kernel_buf, "N=%d", &arr_size) == 1) {
+        if (arr_size > 0 && arr_size <= MAX_ARRAY_SIZE) {
+            // Allocate and initialize the array
+            if (fpu_array != NULL) {
+                kfree(fpu_array); // Free the previous array if it exists
+            }
+            fpu_array = kzalloc(arr_size * sizeof(u32), GFP_KERNEL);
+            if (!fpu_array) {
+                printk(KERN_ERR "[fpu_write] Memory allocation failed\n");
+                return -ENOMEM;
+            }
+            initialized = 1;
+            printk(KERN_INFO "[fpu_write] Array initialized with size %d\n", arr_size);
+        } else {
+            printk(KERN_WARNING "[fpu_write] Invalid array size\n");
+            return -EINVAL;
+        }
+    } 
+    // Check for position=value command
+    else if (sscanf(kernel_buf, "Pozicija=%d=0x%x", &pos, &value) == 2) {
+        if (!initialized) {
+            printk(KERN_WARNING "[fpu_write] Array not initialized\n");
+            return -EINVAL;
+        }
+        if (pos >= 0 && pos < arr_size) {
+            fpu_array[pos] = value;
+            printk(KERN_INFO "[fpu_write] Position %d updated with value %#010x\n", pos, value);
+        } else {
+            printk(KERN_WARNING "[fpu_write] Invalid position\n");
+            return -EINVAL;
+        }
+    } 
+    // Invalid command
+    else {
+        printk(KERN_WARNING "[fpu_write] Invalid command format\n");
+        return -EINVAL;
     }
 
-    dma_rx_buffer = dma_alloc_coherent(NULL, MAX_ARRAY_SIZE * sizeof(u32), &dma_rx_addr, GFP_KERNEL);
-    if (!dma_rx_buffer) {
-        ret = -ENOMEM;
-        goto err_alloc_rx;
-    }
+    return length;
+}
 
-    dma_cap_zero(mask);
-    dma_cap_set(DMA_MEMCPY, mask);
+//** Mmap Function **//  /* VEZBA 12*/
 
-    dma_tx_chan = dma_request_channel(mask, NULL, NULL);
-    if (!dma_tx_chan) {
-        ret = -ENODEV;
-        goto err_req_tx;
-    }
+static int fpu_mmap(struct file *f, struct vm_area_struct *vma_s) {
 
-    dma_rx_chan = dma_request_channel(mask, NULL, NULL);
-    if (!dma_rx_chan) {
-        ret = -ENODEV;
-        goto err_req_rx;
-    }
+	int ret = 0;
+	long length = vma_s->vm_end - vma_s->vm_start;
+	printk(KERN_INFO "[fpu_dma_mmap] DMA TX Buffer is being memory mapped\n");
+	ret = dma_mmap_coherent(NULL, vma_s, tx_vir_buffer, tx_phy_buffer, length);
+	if(ret < 0) {
+		printk(KERN_ERR "[fpu_dma_mmap] Memory map DMA failed\n");
+		return ret;
+	}
+	return 0;
+}
 
-    init_completion(&dma_tx_complete);
-    init_completion(&dma_rx_complete);
+//** DMA Functions **//  /*VEZBA 12*/
 
-    printk(KERN_INFO "fpu_exp driver initialized\n");
+int dma_init(void __iomem *base_address) {
+
+	u32 MM2S_DMACR_val = 0;
+	u32 enInterrupt = 0;
+	iowrite32(0x0, base_address + MM2S_DMACR_REG);
+	iowrite32(DMACR_RESET, base_address + MM2S_DMACR_REG);
+	MM2S_DMACR_val = ioread32(base_address + MM2S_DMACR_REG);
+	enInterrupt = MM2S_DMACR_val | IOC_IRQ_EN | ERR_IRQ_EN;
+	iowrite32(enInterrupt, base_address + MM2S_DMACR_REG);	
+	printk(KERN_INFO "[dma_init] Successfully initialized DMA \n");
+	return 0;
+}
+
+unsigned int dma_simple_write(dma_addr_t TxBufferPtr, unsigned int pkt_len, void __iomem *base_address) {
+
+	u32 MM2S_DMACR_val = 0;
+	u32 enInterrupt = 0;
+	MM2S_DMACR_val = ioread32(base_address + MM2S_DMACR_REG);
+	enInterrupt = MM2S_DMACR_val | IOC_IRQ_EN | ERR_IRQ_EN;
+	iowrite32(enInterrupt, base_address + MM2S_DMACR_REG);
+	MM2S_DMACR_val = ioread32(base_address + MM2S_DMACR_REG);
+	MM2S_DMACR_val |= DMACR_RUN_STOP;
+	transaction_over0 = 1;
+	iowrite32(MM2S_DMACR_val, base_address + MM2S_DMACR_REG);
+	iowrite32((u32)TxBufferPtr, base_address + MM2S_SA_REG);
+	iowrite32(pkt_len, base_address + MM2S_LENGTH_REG);
+	while(transaction_over0 == 1);
+	printk(KERN_INFO "[dma_simple_write] Successfully wrote in DMA \n");
+	*tx_vir_buffer = ulazni_niz[cntrIn++];
+	dma_simple_write(tx_phy_buffer, MAX_PKT_LEN, dma_p->base_addr);		
     return 0;
-
-err_req_rx:
-    dma_release_channel(dma_tx_chan);
-err_req_tx:
-    dma_free_coherent(NULL, MAX_ARRAY_SIZE * sizeof(u32), dma_tx_buffer, dma_tx_addr);
-err_alloc_rx:
-    dma_free_coherent(NULL, MAX_ARRAY_SIZE * sizeof(u32), dma_rx_buffer, dma_rx_addr);
-err_alloc_tx:
-    device_destroy(cl, dev);
-    class_destroy(cl);
-    cdev_del(&cdev);
-    unregister_chrdev_region(dev, 1);
-    return ret;
+	
 }
 
-static void __exit fpu_exit(void)
-{
-    dma_release_channel(dma_tx_chan);
-    dma_release_channel(dma_rx_chan);
-    dma_free_coherent(NULL, MAX_ARRAY_SIZE * sizeof(u32), dma_tx_buffer, dma_tx_addr);
-    dma_free_coherent(NULL, MAX_ARRAY_SIZE * sizeof(u32), dma_rx_buffer, dma_rx_addr);
-    device_destroy(cl, dev);
-    class_destroy(cl);
-    cdev_del(&cdev);
-    unregister_chrdev_region(dev, 1);
+unsigned int dma_simple_read(dma_addr_t RxBufferPtr, unsigned int pkt_len, void __iomem *base_address) {
 
-    if (fpu_array) {
-        kfree(fpu_array);
-    }
-
-    printk(KERN_INFO "fpu_exp driver exited\n");
+	u32 S2MM_DMACR_value;
+	S2MM_DMACR_value = ioread32(base_address + S2MM_DMACR_REG);
+	S2MM_DMACR_value |= DMACR_RUN_STOP; 	
+	transaction_over1 = 1;
+	iowrite32(S2MM_DMACR_value, base_address + S2MM_DMACR_REG);
+	iowrite32((u32)RxBufferPtr, base_address + S2MM_DA_REG);
+	iowrite32(pkt_len, base_address + S2MM_LENGTH_REG);
+	while(transaction_over1 == 1);
+	if(cntrIn < (posIn - 1)) {
+		*tx_vir_buffer = ulazni_niz[cntrIn++];
+		dma_simple_write(rx_phy_buffer, MAX_PKT_LEN, dma_p->base_addr);
+	} 
+	else {
+		cntr = 0;
+	}
+	printk(KERN_INFO "[dma_simple_read] Successfully read from DMA \n");
+	return 0;
 }
 
-module_init(fpu_init);
-module_exit(fpu_exit);
+static irqreturn_t dma_MM2S_isr(int irq, void* dev_id) {
 
-MODULE_LICENSE("GPL");
-MODULE_AUTHOR("Your Name");
-MODULE_DESCRIPTION("FPU Experiment Driver");
+	unsigned int IrqStatus;  
+	IrqStatus = ioread32(dma_p->base_addr + MM2S_STATUS_REG);
+	iowrite32(IrqStatus | 0x00007000, dma_p->base_addr + MM2S_STATUS_REG);
+	printk(KERN_INFO "[dma_isr] Finished DMA MM2S transaction!\n");
+	transaction_over0 = 0;
+	return IRQ_HANDLED;
+}
+
+static irqreturn_t dma_S2MM_isr(int irq, void* dev_id){
+
+	unsigned int IrqStatus;  
+	IrqStatus = ioread32(dma_p->base_addr + S2MM_STATUS_REG);
+	iowrite32(IrqStatus | 0x00007000, dma_p->base_addr + S2MM_STATUS_REG);
+	printk(KERN_INFO "[dma_isr] Finished DMA S2MM transaction!\n");
+	izlazni_niz[posOut] = *tx_vir_buffer;
+	printk(KERN_INFO "[fpu_write] RESULT %d: %#x\n", (posOut + 1), izlazni_niz[posOut]);
+	posOut++;
+	transaction_over1 = 0;
+	return IRQ_HANDLED;
+}
