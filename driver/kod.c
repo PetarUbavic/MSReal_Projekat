@@ -165,7 +165,7 @@ static int __init fpu_init(void) {
 	if(my_device == NULL) {
 		goto fail_1;
 	}
-	printk(KERN_INFO "[fpu_init] Device fpu_driver created\n");
+	printk(KERN_ALERT "[fpu_init] Device fpu_driver created\n");
 	
 	// Allocate and add character device
 	my_cdev = cdev_alloc();	
@@ -211,7 +211,15 @@ static int __init fpu_init(void) {
 
 	printk(KERN_INFO "[fpu_init] Memory reset.\n");
 
-	return platform_driver_register(&fpu_driver);
+    ret = platform_driver_register(&fpu_driver);
+    if (ret) {
+        printk(KERN_ERR "[fpu_init] Failed to register platform driver: %d\n", ret);
+        goto fail_3;
+    }
+
+    printk(KERN_INFO "[fpu_init] Succesfully registered platform driver\n");
+
+	return 0;
 
 	// Error handling and cleanup       //fail_3 nema na vezbama 5, ovde ima zog dma_alloc_coherent funkcije
 	fail_3:
