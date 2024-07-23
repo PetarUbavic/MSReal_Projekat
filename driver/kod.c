@@ -252,12 +252,12 @@ module_exit(fpu_exit);
 
 //** Probe & Remove Functions **//  /* VEZBE 9 i 10*/
 
-static int fpu_probe(struct device *pdev)  {
-
+static int fpu_probe(struct platform_device *pdev)  {
+    printk(KERN_INFO "[fpu_probe] Entered Probe\n");
 	struct resource *r_mem;
 	int rc = 0;
 
-    printk(KERN_INFO "[fpu_probe] Entered Probe\n");
+
 
 	r_mem = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 	if(!r_mem){
