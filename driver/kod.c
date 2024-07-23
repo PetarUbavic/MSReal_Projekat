@@ -210,16 +210,9 @@ static int __init fpu_init(void) {
 	*tx_vir_buffer = 0;
 
 	printk(KERN_INFO "[fpu_init] Memory reset.\n");
+	
 
-    ret = platform_driver_register(&fpu_driver);
-    if (ret) {
-        printk(KERN_ERR "[fpu_init] Failed to register platform driver: %d\n", ret);
-        goto fail_3;
-    }
-
-    printk(KERN_INFO "[fpu_init] Succesfully registered platform driver\n");
-
-	return 0;
+	return platform_driver_register(&fpu_driver);
 
 	// Error handling and cleanup       //fail_3 nema na vezbama 5, ovde ima zog dma_alloc_coherent funkcije
 	fail_3:
