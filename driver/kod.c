@@ -172,7 +172,6 @@ static int __init fpu_init(void) {
 	my_cdev->ops = &my_fops;
 	my_cdev->owner = THIS_MODULE;
 	ret = cdev_add(my_cdev, my_dev_id, 1);
-	printk(KERN_INFO "[fpu_init] RET je %d\n", ret);
 	if(ret) {
 		printk(KERN_ERR "[fpu_init] Failed to add cdev\n");
 		goto fail_2;
@@ -253,7 +252,7 @@ module_exit(fpu_exit);
 
 //** Probe & Remove Functions **//  /* VEZBE 9 i 10*/
 
-static int fpu_probe(struct platform_device *pdev)  {
+static int fpu_probe(struct device *pdev)  {
 
 	struct resource *r_mem;
 	int rc = 0;
