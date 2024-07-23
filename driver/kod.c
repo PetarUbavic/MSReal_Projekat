@@ -20,6 +20,7 @@
 #include <linux/of.h>
 #include <linux/dma-mapping.h>  
 #include <linux/mm.h>
+#include <linux/jocaubavic.h>
 
 //** Driver Information **//
 MODULE_AUTHOR("Petar Ubavic, Jovan Ikic");
