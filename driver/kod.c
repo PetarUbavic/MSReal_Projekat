@@ -165,13 +165,14 @@ static int __init fpu_init(void) {
 	if(my_device == NULL) {
 		goto fail_1;
 	}
-	printk(KERN_ALERT "[fpu_init] Device fpu_driver created\n");
+	printk(KERN_INFO "[fpu_init] Device fpu_driver created\n");
 	
 	// Allocate and add character device
 	my_cdev = cdev_alloc();	
 	my_cdev->ops = &my_fops;
 	my_cdev->owner = THIS_MODULE;
 	ret = cdev_add(my_cdev, my_dev_id, 1);
+	pritnk(KERN_INFO "[fpu_init] RET je %d\n", ret);
 	if(ret) {
 		printk(KERN_ERR "[fpu_init] Failed to add cdev\n");
 		goto fail_2;
