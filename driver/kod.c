@@ -26,7 +26,7 @@ MODULE_AUTHOR("Petar Ubavic, Jovan Ikic");
 MODULE_DESCRIPTION("FPU Exp Driver");
 MODULE_LICENSE("Dual BSD/GPL");
 
-#define      DRIVER_NAME        "fpu_driver" 
+#define      DRIVER_NAME        "fpu_exp" 
 #define      BUFF_SIZE 	        128
 #define      MAX_ARRAY_SIZE     256
 #define      ARR_SIZE  	        5
@@ -118,7 +118,7 @@ static struct of_device_id fpu_of_match[] = {
 
 MODULE_DEVICE_TABLE(of, fpu_of_match);
 
-static struct platform_driver fpu_driver = {
+static struct platform_driver fpu_exp = {
 	.driver = {
 		.name 			= DRIVER_NAME,
 		.owner 			= THIS_MODULE,
@@ -162,11 +162,11 @@ static int __init fpu_init(void) {
 	printk(KERN_INFO "[fpu_init] Successful class chardev create!\n");
 	
 	// Create device
-	my_device = device_create(my_class, NULL, MKDEV(MAJOR(my_dev_id), 0), NULL, "fpu_driver");
+	my_device = device_create(my_class, NULL, MKDEV(MAJOR(my_dev_id), 0), NULL, "fpu_exp");
 	if(my_device == NULL) {
 		goto fail_1;
 	}
-	printk(KERN_INFO "[fpu_init] Device fpu_driver created\n");
+	printk(KERN_INFO "[fpu_init] Device fpu_exp created\n");
 	
 	// Allocate and add character device
 	my_cdev = cdev_alloc();	
@@ -215,7 +215,7 @@ static int __init fpu_init(void) {
 	ret = 7;
 	ret = fpu_probe(plt_dev);
 	printk(KERN_INFO "Manual probe call returned %d\n", ret);
-	//return platform_driver_register(&fpu_driver);
+	//return platform_driver_register(&fpu_exp);
 	return ret;
 
 	// Error handling and cleanup       //fail_3 nema na vezbama 5, ovde ima zog dma_alloc_coherent funkcije
@@ -235,7 +235,7 @@ static void __exit fpu_exit(void) {
 
     /* Exit Device Module */
 	dma_free_coherent(NULL, MAX_PKT_LEN, &tx_phy_buffer, GFP_DMA | GFP_KERNEL);
-    platform_driver_unregister(&fpu_driver); //ove funckije nema u kodu sa 5ih vezbi, ali je pozivamo kako bi se "bezbednije" uklonio driver
+    platform_driver_unregister(&fpu_exp); //ove funckije nema u kodu sa 5ih vezbi, ali je pozivamo kako bi se "bezbednije" uklonio driver
 	cdev_del(my_cdev);
 	device_destroy(my_class, MKDEV(MAJOR(my_dev_id),0));
 	class_destroy(my_class);
@@ -250,11 +250,10 @@ module_exit(fpu_exit);
 //** Probe & Remove Functions **//  /* VEZBE 9 i 10*/
 
 static int fpu_probe(struct platform_device *pdev)  {
-    printk(KERN_INFO "[fpu_probe] Entered Probe\n");
 	struct resource *r_mem;
 	int rc = 0;
 
-
+    printk(KERN_INFO "[fpu_probe] Entered Probe\n");
 
 	r_mem = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 	if(!r_mem){
