@@ -319,9 +319,9 @@ static int fpu_probe(struct platform_device *pdev)  {
 	enable_irq(dma_p->irq_num);
 	dma_init(dma_p->base_addr);
 	printk(KERN_NOTICE "[fpu_probe] fpu platform driver registered - dma\n");
-	
+*/	
     return 0;
-
+/*
 	error03:
 		iounmap(dma_p->base_addr);
 	error02:
