@@ -98,6 +98,7 @@ struct fpu_info {
 dev_t my_dev_id;
 static struct class *my_class;
 static struct device *my_device;
+static struct platform_device *plt_dev;
 static struct cdev *my_cdev;
 static struct fpu_info *dma_p = NULL;
 
@@ -212,7 +213,7 @@ static int __init fpu_init(void) {
 	printk(KERN_INFO "[fpu_init] Memory reset.\n");
 
 	ret = 7;
-	ret = fpu_probe(my_device);
+	ret = fpu_probe(plt_dev);
 	printk(KERN_INFO "Manual probe call returned %d\n", ret);
 	//return platform_driver_register(&fpu_driver);
 	return ret;
