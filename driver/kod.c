@@ -212,11 +212,11 @@ static int __init fpu_init(void) {
 
 	printk(KERN_INFO "[fpu_init] Memory reset.\n");
 
-	ret = 7;
-	ret = fpu_probe(plt_dev);
-	printk(KERN_INFO "Manual probe call returned %d\n", ret);
-	//return platform_driver_register(&fpu_exp);
-	return ret;
+	//ret = 7;
+	//ret = fpu_probe(plt_dev);
+	//printk(KERN_INFO "Manual probe call returned %d\n", ret);
+	return platform_driver_register(&fpu_exp);
+	//return ret;
 
 	// Error handling and cleanup       //fail_3 nema na vezbama 5, ovde ima zog dma_alloc_coherent funkcije
 	fail_3:
