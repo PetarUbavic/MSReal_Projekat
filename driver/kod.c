@@ -112,7 +112,7 @@ struct file_operations my_fops = {
 };
 
 static struct of_device_id fpu_of_match[] = {
-	{ .compatible = "xlnx,axi-dma-0", },
+	{ .compatible = "fp_exp_dma", },
 	{ /* end of list */ },
 };
 
