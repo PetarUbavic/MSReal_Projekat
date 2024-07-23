@@ -172,7 +172,7 @@ static int __init fpu_init(void) {
 	my_cdev->ops = &my_fops;
 	my_cdev->owner = THIS_MODULE;
 	ret = cdev_add(my_cdev, my_dev_id, 1);
-	pritnk(KERN_INFO "[fpu_init] RET je %d\n", ret);
+	printk(KERN_INFO "[fpu_init] RET je %d\n", ret);
 	if(ret) {
 		printk(KERN_ERR "[fpu_init] Failed to add cdev\n");
 		goto fail_2;
