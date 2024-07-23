@@ -97,7 +97,7 @@ struct fpu_info {
 
 dev_t my_dev_id;
 static struct class *my_class;
-static struct platform_device *my_device;
+static struct device *my_device;
 static struct cdev *my_cdev;
 static struct fpu_info *dma_p = NULL;
 
@@ -161,25 +161,12 @@ static int __init fpu_init(void) {
 	printk(KERN_INFO "[fpu_init] Successful class chardev create!\n");
 	
 	// Create device
-/*	my_device = device_create(my_class, NULL, MKDEV(MAJOR(my_dev_id), 0), NULL, "fpu_driver");
+	my_device = device_create(my_class, NULL, MKDEV(MAJOR(my_dev_id), 0), NULL, "fpu_driver");
 	if(my_device == NULL) {
 		goto fail_1;
 	}
 	printk(KERN_ALERT "[fpu_init] Device fpu_driver created\n");
-*/
-	my_device = platform_device_alloc("fpu_driver", -1); // Allocate a new platform device
-	if (!my_device) {
-		printk(KERN_ERR "Failed to allocate platform device\n");
-		return -ENOMEM; // Return error if allocation fails
-	}
-
-	ret = platform_device_add(my_device); // Add the platform device to the kernel
-	if (ret) {
-		printk(KERN_ERR "Failed to add platform device\n");
-		platform_device_put(my_device); // Release the allocated device
-		return ret;
-	}
-
+	
 	// Allocate and add character device
 	my_cdev = cdev_alloc();	
 	my_cdev->ops = &my_fops;
@@ -191,10 +178,10 @@ static int __init fpu_init(void) {
 	}
 	printk(KERN_INFO "[fpu_init] Module init done\n");
 
-
+/*
 
     // Set the coherent DMA mask
-/*    ret = dma_set_coherent_mask(my_device, DMA_BIT_MASK(32));
+    ret = dma_set_coherent_mask(my_device, DMA_BIT_MASK(32));
     if (ret) {
         printk(KERN_ERR "[fpu_init] Failed to set coherent DMA mask\n");
         platform_device_unregister(my_device);
@@ -210,7 +197,7 @@ static int __init fpu_init(void) {
     }
 */
     // Allocate coherent DMA buffer
-	tx_vir_buffer = dma_alloc_coherent(&my_device->dev, MAX_PKT_LEN, &tx_phy_buffer, GFP_DMA | GFP_KERNEL);
+	tx_vir_buffer = dma_alloc_coherent(NULL, MAX_PKT_LEN, &tx_phy_buffer, GFP_DMA | GFP_KERNEL);
 	printk(KERN_INFO "[fpu_init] Virtual and physical addresses coherent starting at %#x and ending at %#x\n", tx_phy_buffer, tx_phy_buffer+(uint)(MAX_PKT_LEN));
 	if(!tx_vir_buffer) {
 		printk(KERN_ALERT "[fpu_init] Could not allocate dma_alloc_coherent");
