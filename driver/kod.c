@@ -277,7 +277,7 @@ static int fpu_probe(struct platform_device *pdev)  {
 		rc = -EBUSY;
 		goto error01;
 	}
-/*
+
 	dma_p->base_addr = ioremap(dma_p->mem_start, dma_p->mem_end - dma_p->mem_start + 1);
 	
     if (!dma_p->base_addr) {
@@ -287,7 +287,7 @@ static int fpu_probe(struct platform_device *pdev)  {
 	}
 
 	printk(KERN_INFO "[fpu_probe] dma base address start at %#x\n", (u32)dma_p->base_addr);
-
+/*
 	dma_p->irq_num = platform_get_irq(pdev, 0);
 	
     if(!dma_p->irq_num) {
@@ -324,9 +324,9 @@ static int fpu_probe(struct platform_device *pdev)  {
 /*
 	error03:
 		iounmap(dma_p->base_addr);
-	error02:
+*/	error02:
 		release_mem_region(dma_p->mem_start, dma_p->mem_end - dma_p->mem_start + 1);
-*/		kfree(dma_p);
+		kfree(dma_p);
 	error01:
 		return rc;		
 
