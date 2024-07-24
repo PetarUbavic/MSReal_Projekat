@@ -261,14 +261,14 @@ static int fpu_probe(struct platform_device *pdev)  {
 	    return -ENODEV;
 	}
 	printk(KERN_INFO "[fpu_probe] Probing dma_p\n");
-/*
+
 	dma_p = (struct fpu_info *) kmalloc(sizeof(struct fpu_info), GFP_KERNEL);
 	
     if(!dma_p) {
 		printk(KERN_ALERT "[fpu_probe] Could not allocate dma device\n");
 		return -ENOMEM;
 	}
-
+/*
 	dma_p->mem_start = r_mem->start;
 	dma_p->mem_end = r_mem->end;
 	
