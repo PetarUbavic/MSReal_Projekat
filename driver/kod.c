@@ -287,7 +287,7 @@ static int fpu_probe(struct platform_device *pdev)  {
 	}
 
 	printk(KERN_INFO "[fpu_probe] dma base address start at %#x\n", (u32)dma_p->base_addr);
-/*
+
 	dma_p->irq_num = platform_get_irq(pdev, 0);
 	
     if(!dma_p->irq_num) {
@@ -305,7 +305,7 @@ static int fpu_probe(struct platform_device *pdev)  {
 	else {
 		printk(KERN_INFO "[fpu_probe] Registered M2SS IRQ %d\n", dma_p->irq_num);
 	}
-
+/*
     if (request_irq(dma_p->irq_num, dma_S2MM_isr, 0, "dma_device", dma_p)) {
 		printk(KERN_ERR "[fpu_probe] Could not register S2MM IRQ %d\n", dma_p->irq_num);
 		return -EIO;
@@ -321,10 +321,10 @@ static int fpu_probe(struct platform_device *pdev)  {
 	printk(KERN_NOTICE "[fpu_probe] fpu platform driver registered - dma\n");
 */	
     return 0;
-/*
+
 	error03:
 		iounmap(dma_p->base_addr);
-*/	error02:
+	error02:
 		release_mem_region(dma_p->mem_start, dma_p->mem_end - dma_p->mem_start + 1);
 		kfree(dma_p);
 	error01:
