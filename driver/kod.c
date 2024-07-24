@@ -268,7 +268,7 @@ static int fpu_probe(struct platform_device *pdev)  {
 		printk(KERN_ALERT "[fpu_probe] Could not allocate dma device\n");
 		return -ENOMEM;
 	}
-/*
+
 	dma_p->mem_start = r_mem->start;
 	dma_p->mem_end = r_mem->end;
 	
@@ -277,7 +277,7 @@ static int fpu_probe(struct platform_device *pdev)  {
 		rc = -EBUSY;
 		goto error01;
 	}
-
+/*
 	dma_p->base_addr = ioremap(dma_p->mem_start, dma_p->mem_end - dma_p->mem_start + 1);
 	
     if (!dma_p->base_addr) {
