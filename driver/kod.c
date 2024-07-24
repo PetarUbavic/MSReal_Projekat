@@ -326,10 +326,10 @@ static int fpu_probe(struct platform_device *pdev)  {
 		iounmap(dma_p->base_addr);
 	error02:
 		release_mem_region(dma_p->mem_start, dma_p->mem_end - dma_p->mem_start + 1);
-		kfree(dma_p);
+*/		kfree(dma_p);
 	error01:
 		return rc;		
-*/
+
 }
 
 static int fpu_remove(struct platform_device *pdev)  {
