@@ -305,7 +305,7 @@ static int fpu_probe(struct platform_device *pdev)  {
 	else {
 		printk(KERN_INFO "[fpu_probe] Registered M2SS IRQ %d\n", dma_p->irq_num);
 	}
-/*
+
     if (request_irq(dma_p->irq_num, dma_S2MM_isr, 0, "dma_device", dma_p)) {
 		printk(KERN_ERR "[fpu_probe] Could not register S2MM IRQ %d\n", dma_p->irq_num);
 		return -EIO;
@@ -315,7 +315,7 @@ static int fpu_probe(struct platform_device *pdev)  {
 	else {
 		printk(KERN_INFO "[fpu_probe] Registered S2MM IRQ %d\n", dma_p->irq_num);
 	}
-
+/*
 	enable_irq(dma_p->irq_num);
 	dma_init(dma_p->base_addr);
 	printk(KERN_NOTICE "[fpu_probe] fpu platform driver registered - dma\n");
