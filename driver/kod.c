@@ -493,7 +493,7 @@ ssize_t fpu_write(struct file *pfile, const char __user *buf, size_t length, lof
             fpu_array[pos] = value;
 			ulazni_niz[pos] = fpu_array[pos];
 			*tx_vir_buffer = ulazni_niz[pos];
-			dma_simple_write1(tx_phy_buffer, MAX_PKT_LEN, dma_p->base_addr);
+			dma_simple_write(tx_phy_buffer, MAX_PKT_LEN, dma_p->base_addr);
 			write_counter++;
             printk(KERN_INFO "[fpu_write] Position %d updated with value %#010x\n", pos, value);
         } else {
@@ -506,11 +506,11 @@ ssize_t fpu_write(struct file *pfile, const char __user *buf, size_t length, lof
         printk(KERN_WARNING "[fpu_write] Invalid command format\n");
         return -EINVAL;
     }
-
+/*
 	if(write_counter == arr_size) {
-		dma_simple_write()
+		dma_simple_write();
 	}
-
+*/
 	printk(KERN_INFO "[fpu_write] Counter je: %d \n", write_counter);
 	printk(KERN_INFO "[fpu_write] Arr_size je: %d \n", arr_size);
 
