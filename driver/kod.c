@@ -92,7 +92,8 @@ struct fpu_info {
 	unsigned long mem_start;
 	unsigned long mem_end;
 	void __iomem *base_addr;
-	int irq_num;
+	int irq_num0;
+	int irq_num1;
 };
 
 dev_t my_dev_id;
@@ -288,35 +289,45 @@ static int fpu_probe(struct platform_device *pdev)  {
 
 	printk(KERN_INFO "[fpu_probe] dma base address start at %#x\n", (u32)dma_p->base_addr);
 
-	dma_p->irq_num = platform_get_irq(pdev, 0);
+	dma_p->irq_num0 = platform_get_irq(pdev, 0);
 	
-    if(!dma_p->irq_num) {
-		printk(KERN_ERR "[fpu_probe] Could not get IRQ resource for dma\n");
+    if(!dma_p->irq_num0) {
+		printk(KERN_ERR "[fpu_probe] Could not get IRQ0 resource for dma\n");
 		rc = -ENODEV;
 		goto error03;
 	}
 
-	if (request_irq(dma_p->irq_num, dma_MM2S_isr, 0, "dma_device", dma_p)) {
-		printk(KERN_ERR "[fpu_probe] Could not register M2SS IRQ %d\n", dma_p->irq_num);
+	if (request_irq(dma_p->irq_num0, dma_MM2S_isr, 0, "dma_device", dma_p)) {
+		printk(KERN_ERR "[fpu_probe] Could not register M2SS IRQ %d\n", dma_p->irq_num0);
 		return -EIO;
 		goto error03;
 	}
 
 	else {
-		printk(KERN_INFO "[fpu_probe] Registered M2SS IRQ %d\n", dma_p->irq_num);
+		printk(KERN_INFO "[fpu_probe] Registered M2SS IRQ %d\n", dma_p->irq_num0);
 	}
 
-    if (request_irq(dma_p->irq_num, dma_S2MM_isr, 0, "dma_device", dma_p)) {
-		printk(KERN_ERR "[fpu_probe] Could not register S2MM IRQ %d\n", dma_p->irq_num);
+
+	dma_p->irq_num1 = platform_get_irq(pdev, 1);
+	
+    if(!dma_p->irq_num1) {
+		printk(KERN_ERR "[fpu_probe] Could not get IRQ1 resource for dma\n");
+		rc = -ENODEV;
+		goto error03;
+	}
+
+
+    if (request_irq(dma_p->irq_num1, dma_S2MM_isr, 0, "dma_device", dma_p)) {
+		printk(KERN_ERR "[fpu_probe] Could not register S2MM IRQ %d\n", dma_p->irq_num1);
 		return -EIO;
 		goto error03;
 	}
 
 	else {
-		printk(KERN_INFO "[fpu_probe] Registered S2MM IRQ %d\n", dma_p->irq_num);
+		printk(KERN_INFO "[fpu_probe] Registered S2MM IRQ %d\n", dma_p->irq_num1);
 	}
 /*
-	enable_irq(dma_p->irq_num);
+	enable_irq(dma_p->irq_num0);
 	dma_init(dma_p->base_addr);
 	printk(KERN_NOTICE "[fpu_probe] fpu platform driver registered - dma\n");
 */	
@@ -336,7 +347,7 @@ static int fpu_remove(struct platform_device *pdev)  {
 
 	printk(KERN_ALERT "[fpu_remove] dma_p device platform driver removed\n");
 	iowrite32(0, dma_p->base_addr);
-	free_irq(dma_p->irq_num, dma_p);
+	free_irq(dma_p->irq_num0, dma_p);
 	iounmap(dma_p->base_addr);
 	release_mem_region(dma_p->mem_start, dma_p->mem_end - dma_p->mem_start + 1);
 	kfree(dma_p);
