@@ -505,7 +505,7 @@ ssize_t fpu_write(struct file *pfile, const char __user *buf, size_t length, lof
     }
 
 	printk(KERN_INFO "[fpu_write] Counter je: %d \n", write_counter);
-	printk(KERN_INFO "[fpu_write] Length je: %d \n", length);
+	printk(KERN_INFO "[fpu_write] Arr_size je: %d \n", arr_size);
 
     return length;
 }
