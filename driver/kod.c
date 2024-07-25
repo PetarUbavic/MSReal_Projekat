@@ -200,9 +200,9 @@ static int __init fpu_init(void) {
 */
     // Allocate coherent DMA buffer
 	tx_vir_buffer = dma_alloc_coherent(NULL, MAX_PKT_LEN, &tx_phy_buffer, GFP_DMA | GFP_KERNEL);
-	printk(KERN_INFO "[fpu_init] Virtual and physical addresses coherent starting at %#x and ending at %#x\n", tx_phy_buffer, tx_phy_buffer+(uint)(MAX_PKT_LEN));
+	printk(KERN_INFO "[fpu_init] Virtual and physical TX addresses coherent starting at %#x and ending at %#x\n", tx_phy_buffer, tx_phy_buffer+(uint)(MAX_PKT_LEN));
 	if(!tx_vir_buffer) {
-		printk(KERN_ALERT "[fpu_init] Could not allocate dma_alloc_coherent");
+		printk(KERN_ALERT "[fpu_init] Could not allocate dma_alloc_coherent TX\n");
 		goto fail_3;
 	}
 	else {
@@ -210,6 +210,18 @@ static int __init fpu_init(void) {
 	}
 
 	*tx_vir_buffer = 0;
+
+	rx_vir_buffer = dma_alloc_coherent(NULL, MAX_PKT_LEN, &rx_phy_buffer, GFP_DMA | GFP_KERNEL);
+	printk(KERN_INFO "[fpu_init] Virtual and physical RX addresses coherent starting at %#x and ending at %#x\n", rx_phy_buffer, rx_phy_buffer+(uint)(MAX_PKT_LEN));
+	if(!rx_vir_buffer) {
+		printk(KERN_ALERT "[fpu_init] Could not allocate dma_alloc_coherent RX\n");
+		goto fail_3;
+	}
+	else {
+		printk("[fpu_init] Successfully allocated memory for receiving buffer\n");
+	}
+
+	*rx_vir_buffer = 0;
 
 	printk(KERN_INFO "[fpu_init] Memory reset.\n");
 
@@ -236,6 +248,7 @@ static void __exit fpu_exit(void) {
 
     /* Exit Device Module */
 	dma_free_coherent(NULL, MAX_PKT_LEN, &tx_phy_buffer, GFP_DMA | GFP_KERNEL);
+	dma_free_coherent(NULL, MAX_PKT_LEN, &rx_phy_buffer, GFP_DMA | GFP_KERNEL);
     platform_driver_unregister(&fpu_exp); //ove funckije nema u kodu sa 5ih vezbi, ali je pozivamo kako bi se "bezbednije" uklonio driver
 	cdev_del(my_cdev);
 	device_destroy(my_class, MKDEV(MAJOR(my_dev_id),0));
@@ -371,7 +384,7 @@ int fpu_close(struct inode *pinode, struct file *pfile) {
 }
 
 //** Read & Write Functions **//  /**/
-
+/*This function read data from the driver and dipslays it to the user*/
 ssize_t fpu_read(struct file *pfile, char __user *buf, size_t length, loff_t *offset) {		
 
 	static int finished = 0;
@@ -426,9 +439,10 @@ ssize_t fpu_read(struct file *pfile, char __user *buf, size_t length, loff_t *of
     return len;
 }
 
+/*This function writes data to the driver*/
 ssize_t fpu_write(struct file *pfile, const char __user *buf, size_t length, loff_t *offset) {	
 
-	char kernel_buf[BUFF_SIZE];
+	u32 kernel_buf[BUFF_SIZE];
     int ret;
     int pos;
     u32 value;
@@ -510,22 +524,24 @@ static int fpu_mmap(struct file *f, struct vm_area_struct *vma_s) {
 int dma_init(void __iomem *base_address) {
 
 	u32 MM2S_DMACR_val = 0;
+	u32 S2MM_DMACR_val = 0;
 	u32 enInterrupt0 = 0;
+	u32 enInterrupt1 = 0;
+
 	iowrite32(0x0, base_address + MM2S_DMACR_REG);
 	iowrite32(DMACR_RESET, base_address + MM2S_DMACR_REG);
 	MM2S_DMACR_val = ioread32(base_address + MM2S_DMACR_REG);
 	enInterrupt0 = MM2S_DMACR_val | IOC_IRQ_EN | ERR_IRQ_EN;
 	iowrite32(enInterrupt0, base_address + MM2S_DMACR_REG);	
 	printk(KERN_INFO "[dma_init] Successfully initialized MM2S DMA \n");
-
-	u32 S2MM_DMACR_val = 0;
-	u32 enInterrupt1 = 0;
+	
 	iowrite32(0x0, base_address + S2MM_DMACR_REG);
 	iowrite32(DMACR_RESET, base_address + S2MM_DMACR_REG);
 	S2MM_DMACR_val = ioread32(base_address + S2MM_DMACR_REG);
 	enInterrupt1 = S2MM_DMACR_val | IOC_IRQ_EN | ERR_IRQ_EN;
 	iowrite32(enInterrupt1, base_address + S2MM_DMACR_REG);	
 	printk(KERN_INFO "[dma_init] Successfully initialized S2MM DMA \n");
+
 	return 0;
 }
 
@@ -553,7 +569,10 @@ unsigned int dma_simple_write(dma_addr_t TxBufferPtr, unsigned int pkt_len, void
 unsigned int dma_simple_read(dma_addr_t RxBufferPtr, unsigned int pkt_len, void __iomem *base_address) {
 
 	u32 S2MM_DMACR_value;
+	u32 enInterrupt = 0;
 	S2MM_DMACR_value = ioread32(base_address + S2MM_DMACR_REG);
+	enInterrupt = S2MM_DMACR_val | IOC_IRQ_EN | ERR_IRQ_EN;
+	iowrite32(enInterrupt, base_address + S2MM_DMACR_REG);
 	S2MM_DMACR_value |= DMACR_RUN_STOP; 	
 	transaction_over1 = 1;
 	iowrite32(S2MM_DMACR_value, base_address + S2MM_DMACR_REG);
