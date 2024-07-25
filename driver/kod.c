@@ -58,7 +58,7 @@ int cntrIn = 0;
 int cntrOut = 0;
 int posIn = 0;
 int posOut = 0;
-
+int write_counter = 1;
 
 // DODATAK
 static u32 *fpu_array = NULL;
@@ -446,7 +446,6 @@ ssize_t fpu_write(struct file *pfile, const char __user *buf, size_t length, lof
     int ret;
     int pos;
     u32 value;
-	int counter = 1;
 
     // Check if the buffer length is within limits
     if (length >= BUFF_SIZE) {
@@ -492,7 +491,7 @@ ssize_t fpu_write(struct file *pfile, const char __user *buf, size_t length, lof
         }
         if (pos >= 0 && pos < arr_size) {
             fpu_array[pos] = value;
-			counter++;
+			write_counter++;
             printk(KERN_INFO "[fpu_write] Position %d updated with value %#010x\n", pos, value);
         } else {
             printk(KERN_WARNING "[fpu_write] Invalid position\n");
@@ -505,7 +504,7 @@ ssize_t fpu_write(struct file *pfile, const char __user *buf, size_t length, lof
         return -EINVAL;
     }
 
-	printk(KERN_INFO "[fpu_write] Counter je: %d \n", counter);
+	printk(KERN_INFO "[fpu_write] Counter je: %d \n", write_counter);
 
     return length;
 }
