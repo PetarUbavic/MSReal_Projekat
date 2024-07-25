@@ -574,7 +574,7 @@ unsigned int dma_simple_write(dma_addr_t TxBufferPtr, unsigned int pkt_len, void
 	while(transaction_over0 == 1);
 	printk(KERN_INFO "[dma_simple_write] Successfully wrote in DMA \n");
 	*tx_vir_buffer = ulazni_niz[cntrIn++];
-	dma_simple_write(tx_phy_buffer, MAX_PKT_LEN, dma_p->base_addr);		
+	//dma_simple_write(tx_phy_buffer, MAX_PKT_LEN, dma_p->base_addr);		
     return 0;
 	
 }
