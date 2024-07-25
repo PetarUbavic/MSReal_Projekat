@@ -414,8 +414,8 @@ ssize_t fpu_read(struct file *pfile, char __user *buf, size_t length, loff_t *of
 
     // Populate the kernel buffer with the array values
     for (i = 0; i < arr_size; i++) {
-		dma_simple_read(tx_phy_buffer, MAX_PKT_LEN, dma_p->base_addr);
-		izlazni_niz[i] = *tx_vir_buffer;
+		dma_simple_read(rx_phy_buffer, MAX_PKT_LEN, dma_p->base_addr);
+		izlazni_niz[i] = *rx_vir_buffer;
 		printk(KERN_INFO "[fpu_read] Izlazni_niz[%d]: %#010x\n", i, izlazni_niz[i]);
 
         len += snprintf(kernel_buf + len, BUFF_SIZE - len, "0x%08x", fpu_array[i]);
