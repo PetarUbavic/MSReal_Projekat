@@ -326,11 +326,12 @@ static int fpu_probe(struct platform_device *pdev)  {
 	else {
 		printk(KERN_INFO "[fpu_probe] Registered S2MM IRQ %d\n", dma_p->irq_num1);
 	}
-/*
+
 	enable_irq(dma_p->irq_num0);
+	enable_irq(dma_p->irq_num1);
 	dma_init(dma_p->base_addr);
 	printk(KERN_NOTICE "[fpu_probe] fpu platform driver registered - dma\n");
-*/	
+	
     return 0;
 
 	error03:
@@ -348,6 +349,7 @@ static int fpu_remove(struct platform_device *pdev)  {
 	printk(KERN_ALERT "[fpu_remove] dma_p device platform driver removed\n");
 	iowrite32(0, dma_p->base_addr);
 	free_irq(dma_p->irq_num0, dma_p);
+	free_irq(dma_p->irq_num1, dma_p);
 	iounmap(dma_p->base_addr);
 	release_mem_region(dma_p->mem_start, dma_p->mem_end - dma_p->mem_start + 1);
 	kfree(dma_p);
