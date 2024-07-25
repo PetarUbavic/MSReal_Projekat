@@ -414,7 +414,7 @@ ssize_t fpu_read(struct file *pfile, char __user *buf, size_t length, loff_t *of
 
     // Populate the kernel buffer with the array values
     for (i = 0; i < arr_size; i++) {
-		//dma_simple_read(rx_phy_buffer, MAX_PKT_LEN, dma_p->base_addr);
+		dma_simple_read(rx_phy_buffer, MAX_PKT_LEN, dma_p->base_addr);
 		izlazni_niz[i] = *rx_vir_buffer;
 		printk(KERN_INFO "[fpu_read] Izlazni_niz[%d]: %#010x\n", i, izlazni_niz[i]);
 
@@ -600,7 +600,7 @@ unsigned int dma_simple_read(dma_addr_t RxBufferPtr, unsigned int pkt_len, void 
 	iowrite32(S2MM_DMACR_value, base_address + S2MM_DMACR_REG);
 	iowrite32((u32)RxBufferPtr, base_address + S2MM_DA_REG);
 	iowrite32(pkt_len, base_address + S2MM_LENGTH_REG);
-	while(transaction_over1 == 1);
+	//while(transaction_over1 == 1);
 	
 	printk(KERN_INFO "[dma_simple_read] Successfully read from DMA \n");
 
