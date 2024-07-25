@@ -446,6 +446,7 @@ ssize_t fpu_write(struct file *pfile, const char __user *buf, size_t length, lof
     int ret;
     int pos;
     u32 value;
+	int counter = 1;
 
     // Check if the buffer length is within limits
     if (length >= BUFF_SIZE) {
@@ -476,7 +477,9 @@ ssize_t fpu_write(struct file *pfile, const char __user *buf, size_t length, lof
             }
             initialized = 1;
             printk(KERN_INFO "[fpu_write] Array initialized with size %d\n", arr_size);
-        } else {
+        } 
+		
+		else {
             printk(KERN_WARNING "[fpu_write] Invalid array size\n");
             return -EINVAL;
         }
@@ -489,6 +492,7 @@ ssize_t fpu_write(struct file *pfile, const char __user *buf, size_t length, lof
         }
         if (pos >= 0 && pos < arr_size) {
             fpu_array[pos] = value;
+			counter++;
             printk(KERN_INFO "[fpu_write] Position %d updated with value %#010x\n", pos, value);
         } else {
             printk(KERN_WARNING "[fpu_write] Invalid position\n");
@@ -500,6 +504,8 @@ ssize_t fpu_write(struct file *pfile, const char __user *buf, size_t length, lof
         printk(KERN_WARNING "[fpu_write] Invalid command format\n");
         return -EINVAL;
     }
+
+	printk(KERN_INFO "[fpu_write] Counter je: %d \n", counter);
 
     return length;
 }
