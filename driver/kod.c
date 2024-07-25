@@ -442,7 +442,7 @@ ssize_t fpu_read(struct file *pfile, char __user *buf, size_t length, loff_t *of
 /*This function writes data to the driver*/
 ssize_t fpu_write(struct file *pfile, const char __user *buf, size_t length, loff_t *offset) {	
 
-	u32 kernel_buf[BUFF_SIZE];
+	char kernel_buf[BUFF_SIZE];
     int ret;
     int pos;
     u32 value;
@@ -571,7 +571,7 @@ unsigned int dma_simple_read(dma_addr_t RxBufferPtr, unsigned int pkt_len, void 
 	u32 S2MM_DMACR_value;
 	u32 enInterrupt = 0;
 	S2MM_DMACR_value = ioread32(base_address + S2MM_DMACR_REG);
-	enInterrupt = S2MM_DMACR_val | IOC_IRQ_EN | ERR_IRQ_EN;
+	enInterrupt = S2MM_DMACR_value | IOC_IRQ_EN | ERR_IRQ_EN;
 	iowrite32(enInterrupt, base_address + S2MM_DMACR_REG);
 	S2MM_DMACR_value |= DMACR_RUN_STOP; 	
 	transaction_over1 = 1;
