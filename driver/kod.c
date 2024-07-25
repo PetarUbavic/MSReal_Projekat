@@ -510,13 +510,22 @@ static int fpu_mmap(struct file *f, struct vm_area_struct *vma_s) {
 int dma_init(void __iomem *base_address) {
 
 	u32 MM2S_DMACR_val = 0;
-	u32 enInterrupt = 0;
+	u32 enInterrupt0 = 0;
 	iowrite32(0x0, base_address + MM2S_DMACR_REG);
 	iowrite32(DMACR_RESET, base_address + MM2S_DMACR_REG);
 	MM2S_DMACR_val = ioread32(base_address + MM2S_DMACR_REG);
-	enInterrupt = MM2S_DMACR_val | IOC_IRQ_EN | ERR_IRQ_EN;
-	iowrite32(enInterrupt, base_address + MM2S_DMACR_REG);	
-	printk(KERN_INFO "[dma_init] Successfully initialized DMA \n");
+	enInterrupt0 = MM2S_DMACR_val | IOC_IRQ_EN | ERR_IRQ_EN;
+	iowrite32(enInterrupt0, base_address + MM2S_DMACR_REG);	
+	printk(KERN_INFO "[dma_init] Successfully initialized MM2S DMA \n");
+
+	u32 S2MM_DMACR_val = 0;
+	u32 enInterrupt1 = 0;
+	iowrite32(0x0, base_address + S2MM_DMACR_REG);
+	iowrite32(DMACR_RESET, base_address + S2MM_DMACR_REG);
+	S2MM_DMACR_val = ioread32(base_address + S2MM_DMACR_REG);
+	enInterrupt1 = S2MM_DMACR_val | IOC_IRQ_EN | ERR_IRQ_EN;
+	iowrite32(enInterrupt1, base_address + S2MM_DMACR_REG);	
+	printk(KERN_INFO "[dma_init] Successfully initialized S2MM DMA \n");
 	return 0;
 }
 
