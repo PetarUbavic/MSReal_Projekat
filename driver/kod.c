@@ -572,6 +572,8 @@ unsigned int dma_simple_write(dma_addr_t TxBufferPtr, unsigned int pkt_len, void
 	u32 MM2S_DMACR_val = 0;
 	u32 enInterrupt = 0;
 
+	&TxBufferPtr = 1;
+
 	MM2S_DMACR_val = ioread32(base_address + MM2S_DMACR_REG);
 
 	enInterrupt = MM2S_DMACR_val | IOC_IRQ_EN | ERR_IRQ_EN;
