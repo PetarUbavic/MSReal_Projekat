@@ -99,7 +99,6 @@ struct fpu_info {
 dev_t my_dev_id;
 static struct class *my_class;
 static struct device *my_device;
-static struct platform_device *plt_dev;
 static struct cdev *my_cdev;
 static struct fpu_info *dma_p = NULL;
 
@@ -511,7 +510,7 @@ ssize_t fpu_write(struct file *pfile, const char __user *buf, size_t length, lof
 
 	if(write_counter == arr_size) {
 		for(pos = 0; pos < arr_size; pos++){
-			tx_vir_buffer = ulazni_niz[pos];
+			*tx_vir_buffer = ulazni_niz[pos];
 			&tx_phy_buffer = *tx_vir_buffer;
 			printk(KERN_INFO "[fpu_write] -----ulazni_niz: %#010x\n", ulazni_niz[pos]);
 			printk(KERN_INFO "[fpu_write] -----tx_phy_buffer: %#010x\n", tx_phy_buffer);
