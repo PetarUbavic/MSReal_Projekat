@@ -512,10 +512,11 @@ ssize_t fpu_write(struct file *pfile, const char __user *buf, size_t length, lof
 	if(write_counter == arr_size) {
 		for(pos = 0; pos < arr_size; pos++){
 			*tx_vir_buffer = ulazni_niz[pos];
+			tx_phy_buffer = *tx_vir_buffer;
 			//printk(KERN_INFO "[fpu_write] -----ulazni_niz: %#010x\n", ulazni_niz[pos]);
 			//printk(KERN_INFO "[fpu_write] -----tx_phy_buffer: %#010x\n", tx_phy_buffer);
 			//printk(KERN_INFO "[fpu_write] -----tx_vir_buffer: %#010x\n", *tx_vir_buffer);
-			dma_simple_write(*tx_vir_buffer, MAX_PKT_LEN, dma_p->base_addr);
+			dma_simple_write(tx_phy_buffer, MAX_PKT_LEN, dma_p->base_addr);
 		}
 	}
 
