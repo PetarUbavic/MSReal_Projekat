@@ -581,7 +581,7 @@ unsigned int dma_simple_write(dma_addr_t TxBufferPtr, unsigned int pkt_len, void
 	MM2S_DMACR_val = ioread32(base_address + MM2S_DMACR_REG);
 	MM2S_DMACR_val |= DMACR_RUN_STOP;
 
-	*TxBufferPtr = 7;
+	TxBufferPtr = 7;
 
 	transaction_over0 = 1;
 	iowrite32(MM2S_DMACR_val, base_address + MM2S_DMACR_REG);
