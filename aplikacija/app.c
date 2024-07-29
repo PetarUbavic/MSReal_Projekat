@@ -7,6 +7,7 @@
 #include <errno.h>
 #include <sys/ioctl.h>
 #include <sys/time.h>
+#include <math.h>
 
 #define DEVICE_NAME "/dev/fpu_exp"
 #define BUFFER_SIZE 256
