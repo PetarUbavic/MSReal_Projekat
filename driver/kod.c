@@ -533,10 +533,17 @@ static int fpu_mmap(struct file *f, struct vm_area_struct *vma_s) {
 
 	int ret = 0;
 	long length = vma_s->vm_end - vma_s->vm_start;
-	printk(KERN_INFO "[fpu_dma_mmap] DMA TX Buffer is being memory mapped\n");
+
+	printk(KERN_INFO "[fpu_mmap] DMA TX Buffer is being memory mapped\n");
+
+	if(length > MAX_PKT_LEN) {
+		return -EIO;
+		printk(KERN_ERR "[fpu_mmap] Trying to mmap more space than it`s allocated\n");
+	}
+
 	ret = dma_mmap_coherent(NULL, vma_s, tx_vir_buffer, tx_phy_buffer, length);
 	if(ret < 0) {
-		printk(KERN_ERR "[fpu_dma_mmap] Memory map DMA failed\n");
+		printk(KERN_ERR "[fpu_mmap] Memory map failed\n");
 		return ret;
 	}
 	return 0;
@@ -587,7 +594,7 @@ unsigned int dma_simple_write(dma_addr_t TxBufferPtr, unsigned int pkt_len, void
 	iowrite32(MM2S_DMACR_val, base_address + MM2S_DMACR_REG);
 	iowrite32((u32)TxBufferPtr, base_address + MM2S_SA_REG);
 	iowrite32(pkt_len, base_address + MM2S_LENGTH_REG);
-	printk(KERN_INFO "[dma_simple_write] Sent: %d \n", TxBufferPtr);
+	printk(KERN_INFO "[dma_simple_write] Sent: %p \n", TxBufferPtr);
 	while(transaction_over0 == 1);
 	printk(KERN_INFO "[dma_simple_write] Successfully wrote in DMA \n");
 	//*tx_vir_buffer = ulazni_niz[cntrIn++];
@@ -615,11 +622,10 @@ unsigned int dma_simple_read(dma_addr_t RxBufferPtr, unsigned int pkt_len, void 
 	iowrite32(S2MM_DMACR_value, base_address + S2MM_DMACR_REG);
 	iowrite32((u32)RxBufferPtr, base_address + S2MM_DA_REG);
 	iowrite32(pkt_len, base_address + S2MM_LENGTH_REG);
-	printk(KERN_INFO "[dma_simple_write] Received: %d \n", RxBufferPtr);
+	printk(KERN_INFO "[dma_simple_read] Received: %d \n", RxBufferPtr);
 	//while(transaction_over1 == 1);
 	
 	printk(KERN_INFO "[dma_simple_read] Successfully read from DMA \n");
-
 
 	return 0;
 }

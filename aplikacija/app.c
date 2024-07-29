@@ -51,38 +51,77 @@ void read_processed_data(int fd, float* buffer) {
 
 int main() {
 
-    int fd = open(DEVICE_NAME, O_RDWR);
+    unsigned int array_num = 0;
+    float value = 0;
+    
+
+label1:    printf("Unesite broj clanova niza: ");
+    scanf("%d", &array_num);
+    printf("\n");
+    printf("Uneli ste %d clanova niza\n", array_num);
+
+    if(array_num > 256 || array_num < 1) {
+        printf("Pogresan unos\n")
+        goto label1;
+    }
+
+    float tx_buffer[array_num];
+    float rx_buffer[array_num];
+    float rx_buffer_cpu[array_num];
+
+    if (array_num > 254) {
+
+        for(int i = 0; i < array_num; i++) {
+            tx_buffer[i] = 7;    // zato sto se dobija skoro ceo broj
+        }
+    }
+
+    else {
+
+        for(int i = 0; i < array_num; i++) {
+            printf("Unesite clan niza na %d poziciji: ", i);
+            scanf("%d", &value);
+            printf("\n");
+            tx_buffer[i] = value;
+            printf("Na poziciji %d nalazi se vrednost: %f\n", i, tx_buffer[i]);
+        }
+    }
+
+    tx_buffer[array_num] = '\0';
+
+
+    int fd = open(DEVICE_NAME, O_RDWR | O_NDELAY);
 
     if (fd < 0) {
-        perror("Failed to open device");
+        printf("Failed to open device\n");
         return errno;
     }
 
-    // Initialize tx_buffer with some values
-    for (int i = 0; i < BUFFER_SIZE; i++) {
-        tx_buffer[i] = (float)i / 10.0f;
-    }
+    // Send the data to the device
+    ssize_t bytes_written = write(fd, tx_buffer, sizeof(float) * array_num);
 
-    // Send the count of data to the driver
-    write_data_count(fd, BUFFER_SIZE);
-
-    // Send each data to the driver
-    for (int i = 0; i < BUFFER_SIZE; i++) {
-        write_data_to_position(fd, i, tx_buffer[i]);
+    if (bytes_written < 0) {
+        printf("Failed to write to device\n");
+        close(fd);
+        return errno;
+    } 
+    
+    else {
+        printf("Successfully wrote %zd bytes to the device\n", bytes_written);
     }
 
     // Read processed data
-    read_processed_data(fd, rx_buffer);
+    read_processed_data(fd, rx_buffer_cpu);
 
     // Print the results
-    for (int i = 0; i < BUFFER_SIZE; i++) {
-        printf("Result[%d] = %f\n", i, rx_buffer[i]);
+    for (int i = 0; i < array_num; i++) {
+        printf("Result[%d] = %f\n", i, rx_buffer_cpu[i]);
     }
 
     // Measure execution time on CPU
     long start_time = get_time_in_us();
-    for (int i = 0; i < BUFFER_SIZE; i++) {
-        rx_buffer[i] = exp(tx_buffer[i]);
+    for (int i = 0; i < array_num; i++) {
+        rx_buffer_cpu[i] = exp(tx_buffer[i]);
     }
     long end_time = get_time_in_us();
     long cpu_time = end_time - start_time;
@@ -90,22 +129,21 @@ int main() {
     printf("CPU execution time: %ld us\n", cpu_time);
 
     // Map TX and RX buffers to the driver
-    float* tx_mmap = (float*)mmap(NULL, BUFFER_SIZE * sizeof(float), PROT_READ | PROT_WRITE, MAP_SHARED, fd, TX_BUFFER_OFFSET);
-    float* rx_mmap = (float*)mmap(NULL, BUFFER_SIZE * sizeof(float), PROT_READ | PROT_WRITE, MAP_SHARED, fd, RX_BUFFER_OFFSET);
+    float* tx_mmap = (float*)mmap(NULL, array_num * sizeof(float), PROT_READ | PROT_WRITE, MAP_SHARED, fd, TX_BUFFER_OFFSET);
+    float* rx_mmap = (float*)mmap(NULL, array_num * sizeof(float), PROT_READ | PROT_WRITE, MAP_SHARED, fd, RX_BUFFER_OFFSET);
 
     if (tx_mmap == MAP_FAILED || rx_mmap == MAP_FAILED) {
-        perror("Memory mapping failed");
+        printf("Memory mapping failed\n");
         close(fd);
         return errno;
     }
 
     // Copy data to the mapped TX buffer
-    memcpy(tx_mmap, tx_buffer, BUFFER_SIZE * sizeof(float));
+    memcpy(tx_mmap, tx_buffer, array_num * sizeof(float));
 
     // Trigger the processing (This part might need specific IOCTL call based on driver implementation)
     // Assuming IOCTL_CALL is defined and properly implemented in the driver
-    ioctl(fd, IOCTL_CALL);
-
+    
     // Measure execution time on FPGA
     start_time = get_time_in_us();
     // Assuming that the processing is triggered and completed within this block
@@ -115,11 +153,11 @@ int main() {
     printf("FPGA execution time: %ld us\n", fpga_time);
 
     // Copy processed data from the mapped RX buffer
-    memcpy(rx_buffer, rx_mmap, BUFFER_SIZE * sizeof(float));
+    memcpy(rx_buffer, rx_mmap, array_num * sizeof(float));
 
     // Unmap the buffers
-    munmap(tx_mmap, BUFFER_SIZE * sizeof(float));
-    munmap(rx_mmap, BUFFER_SIZE * sizeof(float));
+    munmap(tx_mmap, array_num * sizeof(float));
+    munmap(rx_mmap, array_num * sizeof(float));
 
     close(fd);
     return 0;
