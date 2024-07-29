@@ -581,7 +581,7 @@ unsigned int dma_simple_write(dma_addr_t TxBufferPtr, unsigned int pkt_len, void
 	MM2S_DMACR_val = ioread32(base_address + MM2S_DMACR_REG);
 	MM2S_DMACR_val |= DMACR_RUN_STOP;
 
-	TxBufferPtr = 0;
+	TxBufferPtr = 0;		//test
 
 	transaction_over0 = 1;
 	iowrite32(MM2S_DMACR_val, base_address + MM2S_DMACR_REG);
@@ -608,6 +608,8 @@ unsigned int dma_simple_read(dma_addr_t RxBufferPtr, unsigned int pkt_len, void 
 
 	S2MM_DMACR_value = ioread32(base_address + S2MM_DMACR_REG);
 	S2MM_DMACR_value |= DMACR_RUN_STOP;
+
+	RxBufferPtr = 0;	//test
 
 	transaction_over1 = 1;
 	iowrite32(S2MM_DMACR_value, base_address + S2MM_DMACR_REG);
