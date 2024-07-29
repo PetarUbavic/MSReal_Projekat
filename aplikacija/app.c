@@ -36,6 +36,7 @@ void write_data_to_position(int fd, int position, float number) {
 }
 
 // Function to read processed data
+/*
 void read_processed_data(int fd, float* buffer) {
     char result[2048];
     lseek(fd, 0, SEEK_SET);
@@ -48,6 +49,7 @@ void read_processed_data(int fd, float* buffer) {
         index++;
     }
 }
+*/
 
 int main() {
 
@@ -112,7 +114,7 @@ label1:    printf("Unesite broj clanova niza: ");
     }
 
     // Read processed data
-    read_processed_data(fd, rx_buffer_cpu);
+    //read_processed_data(fd, rx_buffer_cpu);
 
     // Print the results
     for (i = 0; i < array_num; i++) {
