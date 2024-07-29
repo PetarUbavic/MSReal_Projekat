@@ -620,7 +620,7 @@ unsigned int dma_simple_read(dma_addr_t RxBufferPtr, unsigned int pkt_len, void 
 
 	transaction_over1 = 1;
 	iowrite32(S2MM_DMACR_value, base_address + S2MM_DMACR_REG);
-	ioread32((u32)RxBufferPtr, base_address + S2MM_DA_REG);
+	iowrite32(base_address + S2MM_DA_REG, (u32)RxBufferPtr);
 	iowrite32(pkt_len, base_address + S2MM_LENGTH_REG);
 	printk(KERN_INFO "[dma_simple_read] Received: %d \n", RxBufferPtr);
 	//while(transaction_over1 == 1);
