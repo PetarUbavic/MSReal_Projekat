@@ -515,7 +515,6 @@ ssize_t fpu_write(struct file *pfile, const char __user *buf, size_t length, lof
 			//tx_phy_buffer = tx_vir_buffer;
 			printk(KERN_INFO "[fpu_write] -----ulazni_niz: %#010x\n", ulazni_niz[pos]);
 			printk(KERN_INFO "[fpu_write] -----tx_phy_buffer: %#010x\n", tx_phy_buffer);
-			printk(KERN_INFO "[fpu_write] -----*tx_phy_buffer: %#010x\n", *tx_phy_buffer);
 			printk(KERN_INFO "[fpu_write] -----*tx_vir_buffer: %#010x\n", *tx_vir_buffer);
 			printk(KERN_INFO "[fpu_write] -----tx_vir_buffer: %#010x\n", tx_vir_buffer);
 			dma_simple_write(tx_phy_buffer, sizeof(ulazni_niz[pos]), dma_p->base_addr);
