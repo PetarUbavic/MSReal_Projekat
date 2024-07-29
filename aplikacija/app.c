@@ -41,7 +41,7 @@ void read_processed_data(int fd, float* buffer) {
     lseek(fd, 0, SEEK_SET);
     read(fd, result, sizeof(result));
     char* token = strtok(result, ",");
-    int index = 0;
+    index = 0;
     while (token != NULL && index < BUFFER_SIZE) {
         sscanf(token, "%08x", (unsigned int*)&buffer[index]);
         token = strtok(NULL, ",");
@@ -53,6 +53,7 @@ int main() {
 
     unsigned int array_num = 0;
     float value = 0;
+    int i = 0;
     
 
 label1:    printf("Unesite broj clanova niza: ");
@@ -61,7 +62,7 @@ label1:    printf("Unesite broj clanova niza: ");
     printf("Uneli ste %d clanova niza\n", array_num);
 
     if(array_num > 256 || array_num < 1) {
-        printf("Pogresan unos\n")
+        printf("Pogresan unos\n");
         goto label1;
     }
 
@@ -71,14 +72,14 @@ label1:    printf("Unesite broj clanova niza: ");
 
     if (array_num > 254) {
 
-        for(int i = 0; i < array_num; i++) {
+        for(i = 0; i < array_num; i++) {
             tx_buffer[i] = 7;    // zato sto se dobija skoro ceo broj
         }
     }
 
     else {
 
-        for(int i = 0; i < array_num; i++) {
+        for(i = 0; i < array_num; i++) {
             printf("Unesite clan niza na %d poziciji: ", i);
             scanf("%d", &value);
             printf("\n");
@@ -114,13 +115,13 @@ label1:    printf("Unesite broj clanova niza: ");
     read_processed_data(fd, rx_buffer_cpu);
 
     // Print the results
-    for (int i = 0; i < array_num; i++) {
+    for (i = 0; i < array_num; i++) {
         printf("Result[%d] = %f\n", i, rx_buffer_cpu[i]);
     }
 
     // Measure execution time on CPU
     long start_time = get_time_in_us();
-    for (int i = 0; i < array_num; i++) {
+    for (i = 0; i < array_num; i++) {
         rx_buffer_cpu[i] = exp(tx_buffer[i]);
     }
     long end_time = get_time_in_us();
@@ -143,7 +144,7 @@ label1:    printf("Unesite broj clanova niza: ");
 
     // Trigger the processing (This part might need specific IOCTL call based on driver implementation)
     // Assuming IOCTL_CALL is defined and properly implemented in the driver
-    
+
     // Measure execution time on FPGA
     start_time = get_time_in_us();
     // Assuming that the processing is triggered and completed within this block
