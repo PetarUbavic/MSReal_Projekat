@@ -23,7 +23,7 @@ static long get_time_in_us() {
 // Function to write the number of data to be processed
 void write_data_count(int fd, int count) {
     char command[20];
-    sprintf(command, "N=%d", count);
+    sprintf(command, "Unesite broj clanova niza: %d\n", count);
     write(fd, command, strlen(command));
 }
 
@@ -50,14 +50,13 @@ void read_processed_data(int fd, float* buffer) {
 }
 
 int main() {
+
     int fd = open(DEVICE_NAME, O_RDWR);
+
     if (fd < 0) {
         perror("Failed to open device");
         return errno;
     }
-
-    float tx_buffer[BUFFER_SIZE];
-    float rx_buffer[BUFFER_SIZE];
 
     // Initialize tx_buffer with some values
     for (int i = 0; i < BUFFER_SIZE; i++) {
