@@ -84,7 +84,7 @@ label1:    printf("Unesite broj clanova niza: ");
 
         for(i = 0; i < array_num; i++) {
             printf("Unesite clan niza na %d poziciji: ", i);
-            scanf("%d", &value);
+            scanf("%f", &value);
             printf("\n");
             tx_buffer[i] = value;
             printf("Na poziciji %d nalazi se vrednost: %f\n", i, tx_buffer[i]);
