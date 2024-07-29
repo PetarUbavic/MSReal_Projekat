@@ -8,7 +8,7 @@ all: $(result)
 $(result): $(objs)
 	@echo -n "Building output binary: "
 	@echo $@
-	$(CC) -o $@ $(objs)
+	$(CC) -o $@ $(objs) -lm  # Link with the math library
 
 %.o: %.c
 	@echo -n "Compiling source into: "
