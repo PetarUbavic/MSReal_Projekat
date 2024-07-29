@@ -94,7 +94,7 @@ label1:    printf("Unesite broj clanova niza: ");
     tx_buffer[array_num] = '\0';
 
 
-    int fd = open(DEVICE_NAME, O_RDWR | O_NDELAY);
+    int fd = open(DEVICE_NAME, O_RDWR);
 
     if (fd < 0) {
         printf("Failed to open device\n");
