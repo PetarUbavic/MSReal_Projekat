@@ -329,7 +329,7 @@ static int fpu_probe(struct platform_device *pdev)  {
 	}
 
 
-    if (request_irq(dma_p->irq_num1, dma_S2MM_isr, 1, "dma_device", dma_p)) {
+    if (request_irq(dma_p->irq_num1, dma_S2MM_isr, 0, "dma_device", dma_p)) {
 		printk(KERN_ERR "[fpu_probe] Could not register S2MM IRQ %d\n", dma_p->irq_num1);
 		return -EIO;
 		goto error03;
