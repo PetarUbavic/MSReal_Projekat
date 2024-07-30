@@ -174,20 +174,20 @@ label1:    printf("Unesite broj clanova niza: ");
 
     // Map TX and RX buffers to the driver
     float* tx_mmap = (float*)mmap(0, array_num * sizeof(float), PROT_READ | PROT_WRITE, MAP_SHARED, fd, TX_BUFFER_OFFSET);
-    //float* rx_mmap = (float*)mmap(NULL, array_num * sizeof(float), PROT_READ | PROT_WRITE, MAP_SHARED, fd, RX_BUFFER_OFFSET);
+    float* rx_mmap = (float*)mmap(NULL, array_num * sizeof(float), PROT_READ | PROT_WRITE, MAP_SHARED, fd, RX_BUFFER_OFFSET);
 
     if (tx_mmap == MAP_FAILED) {
         printf("Memory mapping TX failed\n");
         close(fd);
         return errno;
     }
- /*   
+    
     if (rx_mmap == MAP_FAILED) {
         printf("Memory mapping RX failed\n");
         close(fd);
         return errno;
     }
-*/
+
     // Copy data to the mapped TX buffer
     memcpy(tx_mmap, tx_buffer, array_num * sizeof(float));
 
