@@ -38,7 +38,7 @@ int write_data_count(int fd, int count) {
 // Function to write data to specific positions
 int write_data_to_position(int fd, int position, float number) {
     char command[40];
-    sprintf(command, "Pozicija=%08x", *(unsigned int*)&number);
+    sprintf(command, "Pozicija=%d=%08x", position, *(unsigned int*)&number);
     lseek(fd, position * sizeof(float), SEEK_SET);
 
     if ((write(fd, command, strlen(command))) < 0) {
