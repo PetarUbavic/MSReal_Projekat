@@ -33,7 +33,7 @@ MODULE_LICENSE("Dual BSD/GPL");
 
 
 //** DMA defines **//
-#define MAX_PKT_LEN				2049	//(256*sizeof(float))
+#define MAX_PKT_LEN				1024	//(256*sizeof(float))
 
 #define MM2S_DMACR_REG			0x00
 #define MM2S_SA_REG				0x18
@@ -205,10 +205,12 @@ static int __init fpu_init(void) {
 		goto fail_3;
 	}
 	else {
+		for (i = 0; i < MAX_PKT_LEN/4; i++)
+        	tx_vir_buffer[i] = 0x00000000;
 		printk("[fpu_init] Successfully allocated memory for transmission buffer\n");
 	}
 
-	*tx_vir_buffer = 0;
+	//*tx_vir_buffer = 0;
 
 	rx_vir_buffer = dma_alloc_coherent(NULL, MAX_PKT_LEN, &rx_phy_buffer, GFP_DMA | GFP_KERNEL);
 	printk(KERN_INFO "[fpu_init] Virtual and physical RX addresses coherent starting at %#x and ending at %#x\n", rx_phy_buffer, rx_phy_buffer+(uint)(MAX_PKT_LEN));
@@ -217,10 +219,12 @@ static int __init fpu_init(void) {
 		goto fail_3;
 	}
 	else {
+		for (i = 0; i < MAX_PKT_LEN/4; i++)
+        	rx_vir_buffer[i] = 0x00000000;
 		printk("[fpu_init] Successfully allocated memory for receiving buffer\n");
 	}
 
-	*rx_vir_buffer = 0;
+	//*rx_vir_buffer = 0;
 
 	printk(KERN_INFO "[fpu_init] Memory reset.\n");
 
