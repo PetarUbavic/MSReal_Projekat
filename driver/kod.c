@@ -198,7 +198,7 @@ static int __init fpu_init(void) {
     }
 */
     // Allocate coherent DMA buffer
-	tx_vir_buffer = dma_alloc_coherent(NULL, MAX_PKT_LEN, &tx_phy_buffer, GFP_DMA | GFP_KERNEL);
+	tx_vir_buffer = dma_alloc_coherent(NULL, MAX_PKT_LEN, &tx_phy_buffer, GFP_KERNEL);
 	printk(KERN_INFO "[fpu_init] Virtual and physical TX addresses coherent starting at %#x and ending at %#x\n", tx_phy_buffer, tx_phy_buffer+(uint)(MAX_PKT_LEN));
 	if(!tx_vir_buffer) {
 		printk(KERN_ALERT "[fpu_init] Could not allocate dma_alloc_coherent TX\n");
@@ -210,7 +210,7 @@ static int __init fpu_init(void) {
 
 	*tx_vir_buffer = 0;
 
-	rx_vir_buffer = dma_alloc_coherent(NULL, MAX_PKT_LEN, &rx_phy_buffer, GFP_DMA | GFP_KERNEL);
+	rx_vir_buffer = dma_alloc_coherent(NULL, MAX_PKT_LEN, &rx_phy_buffer, GFP_KERNEL);
 	printk(KERN_INFO "[fpu_init] Virtual and physical RX addresses coherent starting at %#x and ending at %#x\n", rx_phy_buffer, rx_phy_buffer+(uint)(MAX_PKT_LEN));
 	if(!rx_vir_buffer) {
 		printk(KERN_ALERT "[fpu_init] Could not allocate dma_alloc_coherent RX\n");
