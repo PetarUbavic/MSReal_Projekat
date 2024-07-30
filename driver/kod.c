@@ -58,7 +58,7 @@ int cntrIn = 0;
 int cntrOut = 0;
 int posIn = 0;
 int posOut = 0;
-int write_counter = 0;
+unsigned int write_counter = 0;
 
 // DODATAK
 static u32 *fpu_array = NULL;

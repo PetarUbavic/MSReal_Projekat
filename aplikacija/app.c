@@ -155,10 +155,6 @@ label1:    printf("Unesite broj clanova niza: ");
     // Read processed data
     //read_processed_data(fd, rx_buffer_cpu);
 
-    // Print the results
-    for (i = 0; i < array_num; i++) {
-        printf("Result[%d] = %f\n", i, rx_buffer_cpu[i]);
-    }
 
     // Measure execution time on CPU
     long start_time = get_time_in_us();
@@ -168,7 +164,14 @@ label1:    printf("Unesite broj clanova niza: ");
     long end_time = get_time_in_us();
     long cpu_time = end_time - start_time;
 
+    // Print the results
+    for (i = 0; i < array_num; i++) {
+        printf("Result[%d] = %f\n", i, rx_buffer_cpu[i]);
+    }
+
     printf("CPU execution time: %ld us\n", cpu_time);
+
+    fd = open(DEVICE_NAME, O_RDWR);
 
     // Map TX and RX buffers to the driver
     float* tx_mmap = (float*)mmap(NULL, array_num * sizeof(float), PROT_READ | PROT_WRITE, MAP_SHARED, fd, TX_BUFFER_OFFSET);
