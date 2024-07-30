@@ -143,6 +143,7 @@ u32 ulazni_niz[ARR_SIZE * 2];
 static int __init fpu_init(void) {
 
 	int ret = 0;
+	int i = 0;
 	printk(KERN_INFO "[fpu_init] Initialize Module \"%s\"\n", DRIVER_NAME);
 	
 	// Allocate character device region
