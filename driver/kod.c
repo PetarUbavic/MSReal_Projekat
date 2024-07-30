@@ -29,7 +29,7 @@ MODULE_LICENSE("Dual BSD/GPL");
 #define      DRIVER_NAME        "fpu_exp" 
 #define      BUFF_SIZE 	        128
 #define      MAX_ARRAY_SIZE     256
-#define      ARR_SIZE  	        5
+#define      ARR_SIZE  	        256
 
 
 //** DMA defines **//
