@@ -537,8 +537,8 @@ static int fpu_mmap(struct file *f, struct vm_area_struct *vma_s) {
 	printk(KERN_INFO "[fpu_mmap] DMA TX Buffer is being memory mapped\n");
 
 	if(length > MAX_PKT_LEN) {
-		return -EIO;
 		printk(KERN_INFO "[fpu_mmap] Trying to mmap more space than it`s allocated\n");
+		return -EIO;
 	}
 
 	ret = dma_mmap_coherent(NULL, vma_s, tx_vir_buffer, tx_phy_buffer, length);

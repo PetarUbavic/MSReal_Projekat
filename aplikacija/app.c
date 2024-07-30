@@ -76,7 +76,6 @@ int main() {
 
 label1:    printf("Unesite broj clanova niza: ");
     scanf("%d", &array_num);
-    printf("\n");
     printf("Uneli ste %d clanova niza\n", array_num);
 
     if(array_num > 256 || array_num < 1) {
