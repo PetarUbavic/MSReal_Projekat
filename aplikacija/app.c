@@ -38,7 +38,7 @@ int write_data_count(int fd, int count) {
 // Function to write data to specific positions
 int write_data_to_position(int fd, int position, float number) {
     char command[40];
-    sprintf(command, "Pozicija=%d=%08x", position, *(unsigned int*)&number);
+    sprintf(command, "Pozicija=%d=0x%08x", position, *(unsigned int*)&number);
     lseek(fd, position * sizeof(float), SEEK_SET);
 
     if ((write(fd, command, strlen(command))) < 0) {
@@ -100,7 +100,7 @@ label1:    printf("Unesite broj clanova niza: ");
         for(i = 0; i < array_num; i++) {
             printf("Unesite clan niza na %d poziciji: ", i);
             scanf("%f", &value);
-            printf("\n");
+            //printf("\n");
             tx_buffer[i] = value;
             printf("Na poziciji %d nalazi se vrednost: %f\n", i, tx_buffer[i]);
         }
@@ -125,7 +125,7 @@ label1:    printf("Unesite broj clanova niza: ");
         return errno;
     } 
     else {
-        printf("Successfully wrote %zd bytes to the device\n", array_num);
+        printf("Successfully wrote %zd to the device\n", array_num);
     }
 
     close(fd);
