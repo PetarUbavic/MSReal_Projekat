@@ -33,7 +33,7 @@ MODULE_LICENSE("Dual BSD/GPL");
 
 
 //** DMA defines **//
-#define MAX_PKT_LEN				1024	//(256*sizeof(float))
+#define MAX_PKT_LEN				4096	//(256*sizeof(float))
 
 #define MM2S_DMACR_REG			0x00
 #define MM2S_SA_REG				0x18
