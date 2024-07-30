@@ -22,18 +22,32 @@ static long get_time_in_us() {
 }
 
 // Function to write the number of data to be processed
-void write_data_count(int fd, int count) {
+int write_data_count(int fd, int count) {
     char command[20];
-    sprintf(command, "Unesite broj clanova niza: %d\n", count);
-    write(fd, command, strlen(command));
+    sprintf(command, "N=%d", count);
+
+    if ((write(fd, command, strlen(command))) < 0) {
+        return -1;
+    }
+
+    else {
+        return 0;
+    }
 }
 
 // Function to write data to specific positions
-void write_data_to_position(int fd, int position, float number) {
+int write_data_to_position(int fd, int position, float number) {
     char command[40];
     sprintf(command, "Pozicija=%08x", *(unsigned int*)&number);
     lseek(fd, position * sizeof(float), SEEK_SET);
-    write(fd, command, strlen(command));
+
+    if ((write(fd, command, strlen(command))) < 0) {
+        return -1;
+    }
+
+    else {
+        return 0;
+    }
 }
 
 // Function to read processed data
@@ -57,6 +71,7 @@ int main() {
     unsigned int array_num = 0;
     float value = 0;
     int i = 0;
+    int ret = 0;
     
 
 label1:    printf("Unesite broj clanova niza: ");
@@ -102,18 +117,41 @@ label1:    printf("Unesite broj clanova niza: ");
     }
 
     // Send the data to the device
-    ssize_t bytes_written = write(fd, tx_buffer, sizeof(float) * array_num);
+    ret = write_data_count(fd, array_num);
 
-    if (bytes_written < 0) {
+    if (ret < 0) {
         printf("Failed to write to device\n");
         close(fd);
         return errno;
     } 
-    
     else {
-        printf("Successfully wrote %zd bytes to the device\n", bytes_written);
+        printf("Successfully wrote %zd bytes to the device\n", array_num);
     }
 
+    close(fd);
+
+    for(i = 0; i < array_num; i++) {
+
+        fd = open(DEVICE_NAME, O_RDWR);
+
+        if (fd < 0) {
+            printf("Failed to open device\n");
+            return errno;
+        }
+
+        ret = write_data_to_position(fd, i, tx_buffer[i]);
+
+        if(ret < 0) {
+            printf("Failed to write %f to position %d\n", tx_buffer[i], i);
+            close(fd);
+            return errno;
+        }
+        else {
+            printf("Successfully wrote %f to position %d\n", tx_buffer[i], i);
+        }
+
+        close(fd);
+    }
     // Read processed data
     //read_processed_data(fd, rx_buffer_cpu);
 
@@ -136,8 +174,14 @@ label1:    printf("Unesite broj clanova niza: ");
     float* tx_mmap = (float*)mmap(NULL, array_num * sizeof(float), PROT_READ | PROT_WRITE, MAP_SHARED, fd, TX_BUFFER_OFFSET);
     float* rx_mmap = (float*)mmap(NULL, array_num * sizeof(float), PROT_READ | PROT_WRITE, MAP_SHARED, fd, RX_BUFFER_OFFSET);
 
-    if (tx_mmap == MAP_FAILED || rx_mmap == MAP_FAILED) {
-        printf("Memory mapping failed\n");
+    if (tx_mmap == MAP_FAILED) {
+        printf("Memory mapping TX failed\n");
+        close(fd);
+        return errno;
+    }
+    
+    if (rx_mmap == MAP_FAILED) {
+        printf("Memory mapping RX failed\n");
         close(fd);
         return errno;
     }
