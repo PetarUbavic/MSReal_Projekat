@@ -49,7 +49,8 @@ float hexToFloat(uint number) {
 	exp -= 127;
 	
 	uint exponentValue = 1;
-	for(uint i = 1; i <= exp; i++) {
+    uint i = 1;
+	for(i = 1; i <= exp; i++) {
 		exponentValue *= 2;
 	}
 	float mantissaValue = 1.0 + ((float)mantissa / pow(2, 23));
