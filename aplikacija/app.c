@@ -193,7 +193,7 @@ label1:    printf("Unesite broj - clanova niza: ");
             return errno;
         }
         else {
-            printf("Successfully wrote %f to position %d\n", tx_buffer[i], i);
+            printf("Successfully wrote %x to position %d\n", tx_buffer[i], i);
         }
 
         close(fd);
