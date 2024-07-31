@@ -12,7 +12,7 @@
 #define DEVICE_NAME "/dev/fpu_exp"
 #define BUFFER_SIZE 256
 #define TX_BUFFER_OFFSET 0x00
-#define RX_BUFFER_OFFSET 0x4000
+#define RX_BUFFER_OFFSET 0x4096
 
 // Function to get the current time in microseconds
 static long get_time_in_us() {
