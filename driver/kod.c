@@ -622,9 +622,9 @@ unsigned int dma_simple_write(dma_addr_t TxBufferPtr, unsigned int pkt_len, void
 	iowrite32(MM2S_DMACR_val, base_address + MM2S_DMACR_REG);
 	iowrite32((u32)TxBufferPtr, base_address + MM2S_SA_REG);
 	iowrite32(pkt_len, base_address + MM2S_LENGTH_REG);
+	while(transaction_over0 == 1);
 	printk(KERN_INFO "[dma_simple_write] Sent: %#010x \n", TxBufferPtr);
 	printk(KERN_INFO "[dma_simple_write] Vrednost POSLE na adresi %p iznosi %#010x\n", tx_vir_buffer, *((unsigned int *)tx_vir_buffer));
-	while(transaction_over0 == 1);
 	printk(KERN_INFO "[dma_simple_write] Successfully wrote in DMA \n");
 	//*tx_vir_buffer = ulazni_niz[cntrIn++];
 	//dma_simple_write(tx_phy_buffer, MAX_PKT_LEN, dma_p->base_addr);		
@@ -645,7 +645,10 @@ unsigned int dma_simple_read(dma_addr_t RxBufferPtr, unsigned int pkt_len, void 
 	S2MM_DMACR_value = ioread32(base_address + S2MM_DMACR_REG);
 	S2MM_DMACR_value |= DMACR_RUN_STOP;
 
-	RxBufferPtr = 0;	//test
+	printk(KERN_INFO "[dma_simple_read] Pre: %#010x \n", RxBufferPtr);
+	printk(KERN_INFO "[dma_simple_read] Vrednost PRE na adresi %p iznosi %#010x\n", rx_vir_buffer, *((unsigned int *)rx_vir_buffer));
+
+	// RxBufferPtr = 0;	//test
 
 	transaction_over1 = 1;
 	iowrite32(S2MM_DMACR_value, base_address + S2MM_DMACR_REG);
@@ -653,7 +656,9 @@ unsigned int dma_simple_read(dma_addr_t RxBufferPtr, unsigned int pkt_len, void 
 	iowrite32(pkt_len, base_address + S2MM_LENGTH_REG);
 	printk(KERN_INFO "[dma_simple_read] Received: %d \n", RxBufferPtr);
 	//while(transaction_over1 == 1);
-	
+
+	printk(KERN_INFO "[dma_simple_read] Received: %#010x \n", RxBufferPtr);
+	printk(KERN_INFO "[dma_simple_read] Vrednost POSLE na adresi %p iznosi %#010x\n", rx_vir_buffer, *((unsigned int *)rx_vir_buffer));	
 	printk(KERN_INFO "[dma_simple_read] Successfully read from DMA \n");
 
 	return 0;
