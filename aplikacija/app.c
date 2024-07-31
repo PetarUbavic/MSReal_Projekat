@@ -12,7 +12,7 @@
 #define DEVICE_NAME "/dev/fpu_exp"
 #define BUFFER_SIZE 256
 #define TX_BUFFER_OFFSET 0x00
-#define RX_BUFFER_OFFSET 0x1000
+#define RX_BUFFER_OFFSET 0x4000
 
 // Function to get the current time in microseconds
 static long get_time_in_us() {
@@ -174,7 +174,7 @@ label1:    printf("Unesite broj clanova niza: ");
 
     // Map TX and RX buffers to the driver
     float* tx_mmap = (float*)mmap(0, array_num * sizeof(float), PROT_READ | PROT_WRITE, MAP_SHARED, fd, TX_BUFFER_OFFSET);
-    float* rx_mmap = (float*)mmap(NULL, array_num * sizeof(float), PROT_READ | PROT_WRITE, MAP_SHARED, fd, 4096);
+    float* rx_mmap = (float*)mmap(NULL, array_num * sizeof(float), PROT_READ | PROT_WRITE, MAP_SHARED, fd, RX_BUFFER_OFFSET);
 
     if (tx_mmap == MAP_FAILED) {
         printf("Memory mapping TX failed\n");
