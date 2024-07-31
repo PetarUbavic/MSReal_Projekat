@@ -664,7 +664,7 @@ unsigned int dma_simple_read(dma_addr_t RxBufferPtr, unsigned int pkt_len, void 
 	return 0;
 }
 
-static irqreturn_t dma_MM2S_isr(int irq, void* dev_id) {
+static irqreturn_t dma_MM2S_isr(int irq0, void* dev_id) {
 
 	unsigned int IrqStatus;  
 	IrqStatus = ioread32(dma_p->base_addr + MM2S_STATUS_REG);
@@ -674,7 +674,7 @@ static irqreturn_t dma_MM2S_isr(int irq, void* dev_id) {
 	return IRQ_HANDLED;
 }
 
-static irqreturn_t dma_S2MM_isr(int irq, void* dev_id){
+static irqreturn_t dma_S2MM_isr(int irq1, void* dev_id){
 
 	unsigned int IrqStatus;  
 	IrqStatus = ioread32(dma_p->base_addr + S2MM_STATUS_REG);
