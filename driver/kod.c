@@ -541,8 +541,8 @@ static int fpu_mmap(struct file *f, struct vm_area_struct *vma_s) {
     unsigned long pfn_offset = vma_s->vm_pgoff << PAGE_SHIFT;
 
     printk(KERN_INFO "[fpu_mmap] Buffer is being memory mapped\n");
-    printk(KERN_INFO "[fpu_mmap] Buffer TX Length: %ld\n", lengthTX);
-    printk(KERN_INFO "[fpu_mmap] Buffer RX Length: %ld\n", lengthRX);
+    printk(KERN_INFO "[fpu_mmap] Buffer TX Length: %ld\n", lengthTx);
+    printk(KERN_INFO "[fpu_mmap] Buffer RX Length: %ld\n", lengthRx);
 	printk(KERN_INFO "[fpu_mmap] Page Frame Offset: %lx\n", pfn_offset);
 
     if (lengthTx > MAX_PKT_LEN) {
