@@ -545,7 +545,7 @@ static int fpu_mmap(struct file *f, struct vm_area_struct *vma_s) {
     printk(KERN_INFO "[fpu_mmap] Buffer RX Length: %ld\n", lengthRX);
 	printk(KERN_INFO "[fpu_mmap] Page Frame Offset: %lx\n", pfn_offset);
 
-    if (length > MAX_PKT_LEN) {
+    if (lengthTx > MAX_PKT_LEN) {
         printk(KERN_INFO "[fpu_mmap] Trying to mmap more space than it`s allocated\n");
         return -EIO;
     }
@@ -553,11 +553,11 @@ static int fpu_mmap(struct file *f, struct vm_area_struct *vma_s) {
     if (pfn_offset == 0) {
         // Map TX buffer
         printk(KERN_INFO "[fpu_mmap] Mapping TX Buffer\n");
-        ret = dma_mmap_coherent(NULL, vma_s, tx_vir_buffer, tx_phy_buffer, lengthTX);
+        ret = dma_mmap_coherent(NULL, vma_s, tx_vir_buffer, tx_phy_buffer, lengthTx);
     } else if (pfn_offset == MAX_PKT_LEN) {
         // Map RX buffer
         printk(KERN_INFO "[fpu_mmap] Mapping RX Buffer\n");
-        ret = dma_mmap_coherent(NULL, vma_s, rx_vir_buffer, rx_phy_buffer, lengthRX);
+        ret = dma_mmap_coherent(NULL, vma_s, rx_vir_buffer, rx_phy_buffer, lengthRx);
     } else {
         printk(KERN_INFO "[fpu_mmap] Invalid offset for mmap\n");
         return -EINVAL;
