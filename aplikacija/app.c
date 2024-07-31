@@ -12,7 +12,7 @@
 #define DEVICE_NAME "/dev/fpu_exp"
 #define BUFFER_SIZE 256
 #define TX_BUFFER_OFFSET 0x00
-#define RX_BUFFER_OFFSET 0x4001
+#define RX_BUFFER_OFFSET 0x3FFF
 
 uint floatToHex(float num) {
 	uint newNum;
@@ -148,7 +148,7 @@ label1:    printf("Unesite broj - clanova niza: ");
             scanf("%f", &value);
             //printf("\n");
             tx_buffer[i] = floatToHex(value);
-            printf("Na poziciji %d nalazi se vrednost: %f\n", i, tx_buffer[i]);
+            printf("Na poziciji %d nalazi se vrednost: %x\n", i, tx_buffer[i]);
         }
     }
 
