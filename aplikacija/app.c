@@ -148,7 +148,7 @@ label1:    printf("Unesite broj - clanova niza: ");
             scanf("%f", &value);
             //printf("\n");
             tx_buffer[i] = floatToHex(value);
-            printf("Na poziciji %d nalazi se vrednost: %x\n", i, tx_buffer[i]);
+            printf("Na poziciji %d nalazi se vrednost: %#x\n", i, tx_buffer[i]);
         }
     }
 
@@ -188,12 +188,12 @@ label1:    printf("Unesite broj - clanova niza: ");
         ret = write_data_to_position(fd, i, tx_buffer[i]);
 
         if(ret < 0) {
-            printf("Failed to write %f to position %d\n", tx_buffer[i], i);
+            printf("Failed to write %#x to position %d\n", tx_buffer[i], i);
             close(fd);
             return errno;
         }
         else {
-            printf("Successfully wrote %x to position %d\n", tx_buffer[i], i);
+            printf("Successfully wrote %#x to position %d\n", tx_buffer[i], i);
         }
 
         close(fd);
@@ -205,7 +205,7 @@ label1:    printf("Unesite broj - clanova niza: ");
     // Measure execution time on CPU
     long start_time = get_time_in_us();
     for (i = 0; i < array_num; i++) {
-        rx_buffer_cpu[i] = exp(tx_buffer[i]);
+        rx_buffer_cpu[i] = exp(hexToFloat(tx_buffer[i]));
     }
     long end_time = get_time_in_us();
     long cpu_time = end_time - start_time;

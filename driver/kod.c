@@ -135,7 +135,7 @@ u32 *rx_vir_buffer;
 volatile int transaction_over0 = 0;
 volatile int transaction_over1 = 0;
 u32 izlazni_niz[ARR_SIZE];
-u32 ulazni_niz[ARR_SIZE * 2];
+u32 ulazni_niz[ARR_SIZE];
 
 //** Init & Exit Functions **//     /* VEZBA 5*/
 
@@ -611,6 +611,8 @@ unsigned int dma_simple_write(dma_addr_t TxBufferPtr, unsigned int pkt_len, void
 
 	MM2S_DMACR_val = ioread32(base_address + MM2S_DMACR_REG);
 	MM2S_DMACR_val |= DMACR_RUN_STOP;
+
+	printk(KERN_INFO "[dma_simple_write] Pre: %d \n", TxBufferPtr);
 
 	//TxBufferPtr = 0;		//test
 
