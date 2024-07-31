@@ -12,7 +12,7 @@
 #define DEVICE_NAME "/dev/fpu_exp"
 #define BUFFER_SIZE 256
 #define TX_BUFFER_OFFSET 0x00
-#define RX_BUFFER_OFFSET 0x3FFF
+#define RX_BUFFER_OFFSET 0x2000
 
 uint floatToHex(float num) {
 	uint newNum;
