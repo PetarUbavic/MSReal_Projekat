@@ -681,7 +681,7 @@ static irqreturn_t dma_S2MM_isr(int irq, void* dev_id){
 	iowrite32(IrqStatus | 0x00007000, dma_p->base_addr + S2MM_STATUS_REG);
 	printk(KERN_INFO "[dma_isr] Finished DMA S2MM transaction!\n");
 	izlazni_niz[posOut] = *rx_vir_buffer;
-	printk(KERN_INFO "[fpu_write] RESULT %d: %#x\n", (posOut + 1), izlazni_niz[posOut]);
+	printk(KERN_INFO "[dma_isr] RESULT %d: %#x\n", (posOut + 1), izlazni_niz[posOut]);
 	posOut++;
 	transaction_over1 = 0;
 	return IRQ_HANDLED;
