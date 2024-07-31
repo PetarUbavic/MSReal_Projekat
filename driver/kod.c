@@ -613,6 +613,8 @@ unsigned int dma_simple_write(dma_addr_t TxBufferPtr, unsigned int pkt_len, void
 	MM2S_DMACR_val |= DMACR_RUN_STOP;
 
 	printk(KERN_INFO "[dma_simple_write] Pre: %#010x \n", TxBufferPtr);
+	printk(KERN_INFO "[dma_simple_write] Vrednost PRE na adresi %#010x iznosi \n", (void*)TxBufferPtr, *TxBufferPtr);
+	
 
 	//TxBufferPtr = 0;		//test
 
@@ -621,6 +623,7 @@ unsigned int dma_simple_write(dma_addr_t TxBufferPtr, unsigned int pkt_len, void
 	iowrite32((u32)TxBufferPtr, base_address + MM2S_SA_REG);
 	iowrite32(pkt_len, base_address + MM2S_LENGTH_REG);
 	printk(KERN_INFO "[dma_simple_write] Sent: %#010x \n", TxBufferPtr);
+	printk(KERN_INFO "[dma_simple_write] Vrednost POSLE na adresi %#010x iznosi \n", (void*)TxBufferPtr, *TxBufferPtr);
 	while(transaction_over0 == 1);
 	printk(KERN_INFO "[dma_simple_write] Successfully wrote in DMA \n");
 	//*tx_vir_buffer = ulazni_niz[cntrIn++];
