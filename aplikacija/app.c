@@ -14,6 +14,52 @@
 #define TX_BUFFER_OFFSET 0x00
 #define RX_BUFFER_OFFSET 0x4000
 
+uint floatToHex(float num) {
+	uint newNum;
+	if(num == 0) {
+		newNum = 0x0;
+		return newNum;
+	}
+
+	int sign = (num < 0) ? 1: 0;
+	int exp = 0;
+	float normalizedValue = fabs(num);
+	while(normalizedValue >= 2.0) {
+		normalizedValue /= 2.0;
+		exp++;	
+	}
+	while(normalizedValue < 1.0) {
+		normalizedValue *= 2.0;
+		exp--;	
+	}
+	exp += 127;
+	
+	uint mantissa = (uint)((normalizedValue - 1.0) * pow(2, 23));
+	
+	newNum = (sign << 31) | (exp << 23) | mantissa;
+	return newNum;
+}
+
+
+float hexToFloat(uint number) {
+	float newNumber;
+	uint sign = (number >> 31) & 0x1; 
+	uint exp = (number >> 23) & 0xFF; 
+	uint mantissa = number & 0x7FFFFF;
+	exp -= 127;
+	
+	uint exponentValue = 1;
+	for(uint i = 1; i <= exp; i++) {
+		exponentValue *= 2;
+	}
+	float mantissaValue = 1.0 + ((float)mantissa / pow(2, 23));
+	newNumber = exponentValue  * mantissaValue;
+	if(sign == 1) {
+		newNumber *= -1;
+	}
+	return newNumber;	
+}
+
 // Function to get the current time in microseconds
 static long get_time_in_us() {
     struct timeval tv;
@@ -100,7 +146,7 @@ label1:    printf("Unesite broj - clanova niza: ");
             printf("Unesite clan niza na %d poziciji: ", i);
             scanf("%f", &value);
             //printf("\n");
-            tx_buffer[i] = value;
+            tx_buffer[i] = floatToHex(value);
             printf("Na poziciji %d nalazi se vrednost: %f\n", i, tx_buffer[i]);
         }
     }
