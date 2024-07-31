@@ -655,7 +655,6 @@ unsigned int dma_simple_read(dma_addr_t RxBufferPtr, unsigned int pkt_len, void 
 	iowrite32(S2MM_DMACR_value, base_address + S2MM_DMACR_REG);
 	iowrite32((u32)RxBufferPtr, base_address + S2MM_DA_REG);
 	iowrite32(pkt_len, base_address + S2MM_LENGTH_REG);
-	printk(KERN_INFO "[dma_simple_read] Received: %d \n", RxBufferPtr);
 	//while(transaction_over1 == 1);
 
 	printk(KERN_INFO "[dma_simple_read] Received: %#010x \n", RxBufferPtr);
@@ -681,9 +680,9 @@ static irqreturn_t dma_S2MM_isr(int irq, void* dev_id){
 	IrqStatus = ioread32(dma_p->base_addr + S2MM_STATUS_REG);
 	iowrite32(IrqStatus | 0x00007000, dma_p->base_addr + S2MM_STATUS_REG);
 	printk(KERN_INFO "[dma_isr] Finished DMA S2MM transaction!\n");
-/*	izlazni_niz[posOut] = *rx_vir_buffer;
+	izlazni_niz[posOut] = *rx_vir_buffer;
 	printk(KERN_INFO "[fpu_write] RESULT %d: %#x\n", (posOut + 1), izlazni_niz[posOut]);
 	posOut++;
-*/	transaction_over1 = 0;
+	transaction_over1 = 0;
 	return IRQ_HANDLED;
 }
