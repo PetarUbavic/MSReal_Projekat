@@ -12,7 +12,7 @@
 #define DEVICE_NAME "/dev/fpu_exp"
 #define BUFFER_SIZE 256
 #define TX_BUFFER_OFFSET 0x00
-#define RX_BUFFER_OFFSET 0x4096
+#define RX_BUFFER_OFFSET 0x4000
 
 // Function to get the current time in microseconds
 static long get_time_in_us() {
@@ -74,7 +74,7 @@ int main() {
     int ret = 0;
     
 
-label1:    printf("Unesite broj clanova niza: ");
+label1:    printf("Unesite broj - clanova niza: ");
     scanf("%d", &array_num);
     printf("Uneli ste %d clanova niza\n", array_num);
 
