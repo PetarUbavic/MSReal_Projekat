@@ -611,6 +611,7 @@ unsigned int dma_simple_write(dma_addr_t TxBufferPtr, unsigned int pkt_len, void
 
 	MM2S_DMACR_val = ioread32(base_address + MM2S_DMACR_REG);
 	MM2S_DMACR_val |= DMACR_RUN_STOP;
+	iowrite32(MM2S_DMACR_val, base_address + MM2S_DMACR_REG);		/// dodato, da upisem DMACR RUN STOP u MM2S_DMACR_REG mozda zbog toga zeza, probam
 
 	printk(KERN_INFO "[dma_simple_write] Pre: %#010x \n", TxBufferPtr);
 	printk(KERN_INFO "[dma_simple_write] Vrednost PRE na adresi %p iznosi %#010x\n", tx_vir_buffer, *((unsigned int *)tx_vir_buffer));
