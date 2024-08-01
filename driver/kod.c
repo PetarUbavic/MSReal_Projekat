@@ -427,6 +427,9 @@ ssize_t fpu_read(struct file *pfile, char __user *buf, size_t length, loff_t *of
         if (i < arr_size - 1) {
             len += snprintf(kernel_buf + len, BUFF_SIZE - len, ", ");
         }
+		else {
+			len += snprintf(kernel_buf + len, BUFF_SIZE - len, "\n");
+		}
         if (len >= BUFF_SIZE) {
             printk(KERN_WARNING "[fpu_read] Buffer size exceeded\n");
             kfree(kernel_buf);
