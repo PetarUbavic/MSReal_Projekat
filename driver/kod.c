@@ -621,7 +621,7 @@ unsigned int dma_simple_write(dma_addr_t TxBufferPtr, unsigned int pkt_len, void
 	iowrite32(MM2S_DMACR_val, base_address + MM2S_DMACR_REG);
 	iowrite32((u32)TxBufferPtr, base_address + MM2S_SA_REG);
 	iowrite32(pkt_len, base_address + MM2S_LENGTH_REG);
-	//while(transaction_over0 == 1);										// ovde puca kad se salje vise clanova, samo prvi put ide u interapt i vise ne
+	while(transaction_over0 == 1);										// ovde puca kad se salje vise clanova, samo prvi put ide u interapt i vise ne
 	printk(KERN_INFO "[dma_simple_write] Sent: %#010x \n", TxBufferPtr);
 	printk(KERN_INFO "[dma_simple_write] Vrednost POSLE na adresi %p iznosi %#010x\n", tx_vir_buffer, *((unsigned int *)tx_vir_buffer));
 	printk(KERN_INFO "[dma_simple_write] Successfully wrote in DMA \n");
