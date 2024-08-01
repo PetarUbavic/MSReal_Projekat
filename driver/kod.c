@@ -583,14 +583,14 @@ int dma_init(void __iomem *base_address) {
 	u32 enInterrupt1 = 0;
 
 	iowrite32(0x0, base_address + MM2S_DMACR_REG);
-	//iowrite32(DMACR_RESET, base_address + MM2S_DMACR_REG);
+	iowrite32(DMACR_RESET, base_address + MM2S_DMACR_REG);
 	MM2S_DMACR_val = ioread32(base_address + MM2S_DMACR_REG);
 	enInterrupt0 = MM2S_DMACR_val | IOC_IRQ_EN | ERR_IRQ_EN;
 	iowrite32(enInterrupt0, base_address + MM2S_DMACR_REG);	
 	printk(KERN_INFO "[dma_init] Successfully initialized MM2S DMA \n");
 	
 	iowrite32(0x0, base_address + S2MM_DMACR_REG);
-	//iowrite32(DMACR_RESET, base_address + S2MM_DMACR_REG);
+	iowrite32(DMACR_RESET, base_address + S2MM_DMACR_REG);
 	S2MM_DMACR_val = ioread32(base_address + S2MM_DMACR_REG);
 	enInterrupt1 = S2MM_DMACR_val | IOC_IRQ_EN | ERR_IRQ_EN;
 	iowrite32(enInterrupt1, base_address + S2MM_DMACR_REG);	
@@ -611,12 +611,10 @@ unsigned int dma_simple_write(dma_addr_t TxBufferPtr, unsigned int pkt_len, void
 
 	MM2S_DMACR_val = ioread32(base_address + MM2S_DMACR_REG);
 	MM2S_DMACR_val |= DMACR_RUN_STOP;
-	iowrite32(MM2S_DMACR_val, base_address + MM2S_DMACR_REG);		/// dodato, da upisem DMACR RUN STOP u MM2S_DMACR_REG mozda zbog toga zeza, probam
 
 	printk(KERN_INFO "[dma_simple_write] Pre: %#010x \n", TxBufferPtr);
 	printk(KERN_INFO "[dma_simple_write] Vrednost PRE na adresi %p iznosi %#010x\n", tx_vir_buffer, *((unsigned int *)tx_vir_buffer));
 	
-
 	//TxBufferPtr = 0;		//test
 
 	transaction_over0 = 1;
