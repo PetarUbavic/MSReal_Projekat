@@ -517,7 +517,7 @@ ssize_t fpu_write(struct file *pfile, const char __user *buf, size_t length, lof
 	if(write_counter == arr_size) {
 		for(pos = 0; pos < arr_size; pos++){
 			*tx_vir_buffer = ulazni_niz[pos];
-			
+
 			printk(KERN_INFO "[fpu_write] -----ulazni_niz: %#010x\n", ulazni_niz[pos]);
 			printk(KERN_INFO "[fpu_write] -----tx_phy_buffer: %#010x\n", tx_phy_buffer);
 			printk(KERN_INFO "[fpu_write] -----*tx_vir_buffer: %#010x\n", *tx_vir_buffer);
@@ -628,7 +628,7 @@ unsigned int dma_simple_write(dma_addr_t TxBufferPtr, unsigned int pkt_len, void
 	printk(KERN_INFO "[dma_simple_write] Successfully wrote in DMA \n");
 	//*tx_vir_buffer = ulazni_niz[cntrIn++];
 	//dma_simple_write(tx_phy_buffer, MAX_PKT_LEN, dma_p->base_addr);
-	dma_simple_read(rx_phy_buffer, pkt_len, dma_p->base_addr);				
+	//dma_simple_read(rx_phy_buffer, pkt_len, dma_p->base_addr);				
     return 0;
 	
 }
