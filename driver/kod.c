@@ -423,7 +423,7 @@ ssize_t fpu_read(struct file *pfile, char __user *buf, size_t length, loff_t *of
 		izlazni_niz[i] = *rx_vir_buffer;
 */		printk(KERN_INFO "[fpu_read] Izlazni_niz[%d]: %#010x\n", i, izlazni_niz[i]);
 
-        len += snprintf(kernel_buf + len, BUFF_SIZE - len, "0x%08x", fpu_array[i]);
+        len += snprintf(kernel_buf + len, BUFF_SIZE - len, "0x%08x", izlazni_niz[i]);
         if (i < arr_size - 1) {
             len += snprintf(kernel_buf + len, BUFF_SIZE - len, ", ");
         }
