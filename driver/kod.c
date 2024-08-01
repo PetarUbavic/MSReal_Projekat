@@ -671,7 +671,7 @@ static irqreturn_t dma_MM2S_isr(int irq, void* dev_id) {
 	printk(KERN_INFO "[dma_isr] Finished DMA MM2S transaction!\n");
 	transaction_over0 = 0;
 
-	iowrite32(DMACR_RESET, dma_p->base_addr + MM2S_DMACR_REG);
+	//iowrite32(DMACR_RESET, dma_p->base_addr + MM2S_DMACR_REG);
 	return IRQ_HANDLED;
 }
 
