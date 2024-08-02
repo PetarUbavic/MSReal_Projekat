@@ -98,7 +98,7 @@ int write_data_to_position(int fd, int position, float number) {
 }
 
 // Function to read processed data
-/*
+
 void read_processed_data(int fd, float* buffer) {
     char result[2048];
     lseek(fd, 0, SEEK_SET);
@@ -111,7 +111,7 @@ void read_processed_data(int fd, float* buffer) {
         index++;
     }
 }
-*/
+
 
 int main() {
 
@@ -134,10 +134,10 @@ label1:    printf("Unesite broj - clanova niza: ");
     float rx_buffer[array_num];
     float rx_buffer_cpu[array_num];
 
-    if (array_num > 254) {
+    if (array_num == 256) {
 
         for(i = 0; i < array_num; i++) {
-            tx_buffer[i] = 7;    // zato sto se dobija skoro ceo broj
+            tx_buffer[i] = floatToHex(7);    // zato sto se dobija skoro ceo broj
         }
     }
 
@@ -154,6 +154,7 @@ label1:    printf("Unesite broj - clanova niza: ");
 
     tx_buffer[array_num] = '\0';
 
+    #ifndef MMAP
 
     int fd = open(DEVICE_NAME, O_RDWR);
 
@@ -199,23 +200,16 @@ label1:    printf("Unesite broj - clanova niza: ");
         close(fd);
     }
     // Read processed data
-    //read_processed_data(fd, rx_buffer_cpu);
+    fd = open(DEVICE_NAME, O_RWDR);
 
+    read_processed_data(fd, rx_buffer);
+    close(fd);
 
-    // Measure execution time on CPU
-    long start_time = get_time_in_us();
-    for (i = 0; i < array_num; i++) {
-        rx_buffer_cpu[i] = exp(hexToFloat(tx_buffer[i]));
-    }
-    long end_time = get_time_in_us();
-    long cpu_time = end_time - start_time;
-
-    // Print the results
-    for (i = 0; i < array_num; i++) {
-        printf("Result[%d] = %f\n", i, rx_buffer_cpu[i]);
+    for(i = 0; i < array_num; i++) {
+        printf("Rezultat %d = %f\n", i, hexToFloat(rx_buffer[i]));
     }
 
-    printf("CPU execution time: %ld us\n", cpu_time);
+    #else
 
     fd = open(DEVICE_NAME, O_RDWR);
 
@@ -258,10 +252,28 @@ label1:    printf("Unesite broj - clanova niza: ");
 
     close(fd);
 
+    #endif
+/*
+    // Measure execution time on CPU
+    long start_time = get_time_in_us();
+    for (i = 0; i < array_num; i++) {
+        rx_buffer_cpu[i] = exp(hexToFloat(tx_buffer[i]));
+    }
+    long end_time = get_time_in_us();
+    long cpu_time = end_time - start_time;
+
+    // Print the results
+    for (i = 0; i < array_num; i++) {
+        printf("Result[%d] = %f\n", i, rx_buffer_cpu[i]);
+    }
+
+    printf("CPU execution time: %ld us\n", cpu_time);
+
+    
     // Print the results
     for (i = 0; i < array_num; i++) {
         printf("FPGA Result[%d] = %f\n", i, rx_buffer[i]);
     }
-
+*/
     return 0;
 }
