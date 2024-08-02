@@ -150,7 +150,7 @@ label1:    printf("Unesite broj - clanova niza: ");
             printf("DEBUG --- VALUE je: %f \n", value);
             printf("DEBUG --- FloatToHex je: %#x \n", floatToHex(value));
             value = floatToHex(value);
-            tx_buffer[i] = value;
+            (float)tx_buffer[i] = value;
             printf("Na poziciji %d nalazi se vrednost: %#x\n", i, tx_buffer[i]);
         }
     }
