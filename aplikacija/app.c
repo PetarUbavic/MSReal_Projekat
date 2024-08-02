@@ -130,7 +130,7 @@ label1:    printf("Unesite broj - clanova niza: ");
         goto label1;
     }
 
-    char tx_buffer[array_num];
+    int tx_buffer[array_num];
     float rx_buffer[array_num];
     float rx_buffer_cpu[array_num];
 
@@ -151,6 +151,7 @@ label1:    printf("Unesite broj - clanova niza: ");
             printf("DEBUG --- FloatToHex je: %#x \n", floatToHex(value));
             value = floatToHex(value);
             tx_buffer[i] = value;
+            printf("DEBUG --- NOVI VALUE je: %#x \n", value);
             printf("Na poziciji %d nalazi se vrednost: %#x\n", i, tx_buffer[i]);
         }
     }
