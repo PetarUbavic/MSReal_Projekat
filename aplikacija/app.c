@@ -104,7 +104,7 @@ void read_processed_data(int fd, float* buffer) {
     lseek(fd, 0, SEEK_SET);
     read(fd, result, sizeof(result));
     char* token = strtok(result, ",");
-    index = 0;
+    int index = 0;
     while (token != NULL && index < BUFFER_SIZE) {
         sscanf(token, "%08x", (unsigned int*)&buffer[index]);
         token = strtok(NULL, ",");
@@ -200,7 +200,7 @@ label1:    printf("Unesite broj - clanova niza: ");
         close(fd);
     }
     // Read processed data
-    fd = open(DEVICE_NAME, O_RWDR);
+    fd = open(DEVICE_NAME, O_RDWR);
 
     read_processed_data(fd, rx_buffer);
     close(fd);
