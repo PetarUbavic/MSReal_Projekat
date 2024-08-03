@@ -153,7 +153,7 @@ label1:    printf("Unesite broj - clanova niza: ");
             hex_value = floatToHex(value);
             tx_buffer[i] = hex_value;
             printf("DEBUG --- NOVI HEX_VALUE je: %#x \n", (uint)hex_value);
-            printf("DEBUG --- NOVI HEX_VALUE je: %f \n", hexToFloat(hex_value));
+            printf("DEBUG --- NOVI HEX_VALUE je: %f \n", hexToFloat((float)hex_value));
             printf("Na poziciji %d nalazi se vrednost: %#x\n", i, tx_buffer[i]);
         }
     }
