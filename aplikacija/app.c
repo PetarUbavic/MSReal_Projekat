@@ -231,7 +231,7 @@ label1:    printf("Unesite broj - clanova niza: ");
         while (token != NULL && count < 256) {
             printf("Token: %s\n", token);  // Debugging line to show each token
             // Convert the hex string to unsigned int and store it in the array
-            if (sscanf(token, "%x", &rx_buffer[count]) == 1) {
+            if (sscanf(token, "0x%x", &rx_buffer[count]) == 1) {
                 count++;
             } else {
                 printf("Failed to parse token: %s\n", token);  // Debugging line
