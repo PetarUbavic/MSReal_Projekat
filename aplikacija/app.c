@@ -252,13 +252,14 @@ label1:    printf("Unesite broj - clanova niza: ");
 
     printf("Received float numbers:\n");
     for (i = 0; i < count; i++) {
-        if(isinf((double)hexToFloat((float)rx_buffer[i]))) {
+        double val = (double)hexToFloat((float)rx_buffer[i]);
+        if(isinf(val)) {
             printf("Inf\n");
         }
         else {
-            printf("%f\n", hexToFloat((float)rx_buffer[i]));
+            printf("%f\n", val);
         }
-        printf("IS INF VREDNOST: %f\n", isinf((double)hexToFloat((float)rx_buffer[i])));
+        printf("IS INF VREDNOST: %f\n", isinf(val));
     }
 /*
     for(i = 0; i < array_num; i++) {
