@@ -120,6 +120,8 @@ int main() {
     uint hex_value = 0;
     int i = 0;
     int ret = 0;
+
+    char path[BUFFER_SIZE];
     
 
 label1:    printf("Unesite broj - clanova niza: ");
@@ -206,15 +208,31 @@ label1:    printf("Unesite broj - clanova niza: ");
         close(fd);
     }
     // Read processed data
-    fd = open(DEVICE_NAME, O_RDWR);
+/*    fd = open(DEVICE_NAME, O_RDWR);
 
     read_processed_data(fd, rx_buffer);
     close(fd);
+*/
+     // Open the command for reading
+    fp = popen("cat /dev/fpu_exp", "r");
+    if (fp == NULL) {
+        printf("Failed to run command\n");
+        exit(1);
+    }
 
+    // Read the output a line at a time and print it
+    while (fgets(path, sizeof(path), fp) != NULL) {
+        printf("%s", path);
+    }
+
+    // Close the pipe
+    pclose(fp);
+
+/*
     for(i = 0; i < array_num; i++) {
         printf("Rezultat %d = %f\n", i, hexToFloat(rx_buffer[i]));
     }
-
+*/
     #else
 
     fd = open(DEVICE_NAME, O_RDWR);
