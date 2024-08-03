@@ -250,6 +250,10 @@ label1:    printf("Unesite broj - clanova niza: ");
         printf("%#x\n", rx_buffer[i]);
     }
 
+    printf("Received float numbers:\n");
+    for (i = 0; i < count; i++) {
+        printf("%f\n", hexToFloat((float)rx_buffer[i]));
+    }
 /*
     for(i = 0; i < array_num; i++) {
         printf("Rezultat %d = %f\n", i, hexToFloat(rx_buffer[i]));
