@@ -119,6 +119,7 @@ int main() {
     float value = 0;
     uint hex_value = 0;
     int i = 0;
+    int count = 0;
     int ret = 0;
 
     FILE *fp;
