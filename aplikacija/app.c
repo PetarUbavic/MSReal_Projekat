@@ -83,7 +83,7 @@ int write_data_count(int fd, int count) {
 }
 
 // Function to write data to specific positions
-int write_data_to_position(int fd, int position, float number) {
+int write_data_to_position(int fd, int position, uint number) {
     char command[40];
     sprintf(command, "Pozicija=%d=0x%08x", position, *(unsigned int*)&number);
     lseek(fd, position * sizeof(float), SEEK_SET);
@@ -117,6 +117,7 @@ int main() {
 
     unsigned int array_num = 0;
     float value = 0;
+    uint hex_value = 0;
     int i = 0;
     int ret = 0;
     
@@ -149,10 +150,10 @@ label1:    printf("Unesite broj - clanova niza: ");
             //printf("\n");
             printf("DEBUG --- VALUE je: %f \n", value);
             printf("DEBUG --- FloatToHex je: %#x \n", floatToHex(value));
-            value = floatToHex(value);
-            tx_buffer[i] = (uint)value;
-            printf("DEBUG --- NOVI VALUE je: %#x \n", (uint)value);
-            printf("DEBUG --- NOVI VALUE je: %f \n", hexToFloat(value));
+            hex_value = floatToHex(value);
+            tx_buffer[i] = hex_value;
+            printf("DEBUG --- NOVI HEX_VALUE je: %#x \n", (uint)hex_value);
+            printf("DEBUG --- NOVI HEX_VALUE je: %f \n", hexToFloat(hex_value));
             printf("Na poziciji %d nalazi se vrednost: %#x\n", i, tx_buffer[i]);
         }
     }
