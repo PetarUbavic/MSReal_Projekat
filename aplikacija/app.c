@@ -252,14 +252,12 @@ label1:    printf("Unesite broj - clanova niza: ");
 
     printf("Received float numbers:\n");
     for (i = 0; i < count; i++) {
-        double val = (double)hexToFloat((float)rx_buffer[i]);
-        if(isinf(val)) {
+        if((double)hexToFloat((float)rx_buffer[i]) == 0) {                          // isinf((double)hexToFloat((float)rx_buffer[i])) ovo ne radi, pa cu proveriti da li je (double)hexToFloat((float)rx_buffer[i]) == 0, posto e stepenovano bilo kojim realnim brojem nije 0, onda ako je 0 znaci da je rezultat beskonacno
             printf("Inf\n");
         }
         else {
-            printf("%f\n", val);
+            printf("%f\n", hexToFloat((float)rx_buffer[i]));
         }
-        printf("IS INF VREDNOST: %f\n", isinf(val));
     }
 /*
     for(i = 0; i < array_num; i++) {
