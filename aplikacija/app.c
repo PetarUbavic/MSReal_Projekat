@@ -136,7 +136,7 @@ label1:    printf("Unesite broj - clanova niza: ");
     }
 
     uint tx_buffer[array_num];
-    float rx_buffer[array_num];
+    uint rx_buffer[array_num];
     float rx_buffer_cpu[array_num];
 
     if (array_num == 256) {
