@@ -259,11 +259,6 @@ label1:    printf("Unesite broj - clanova niza: ");
             printf("%f\n", hexToFloat((float)rx_buffer[i]));
         }
     }
-/*
-    for(i = 0; i < array_num; i++) {
-        printf("Rezultat %d = %f\n", i, hexToFloat(rx_buffer[i]));
-    }
-*/
     #else
 
     fd = open(DEVICE_NAME, O_RDWR);

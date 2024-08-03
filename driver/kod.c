@@ -27,7 +27,7 @@ MODULE_DESCRIPTION("FPU Exp Driver");
 MODULE_LICENSE("Dual BSD/GPL");
 
 #define      DRIVER_NAME        "fpu_exp" 
-#define      BUFF_SIZE 	        128
+#define      BUFF_SIZE 	        256
 #define      MAX_ARRAY_SIZE     256
 #define      ARR_SIZE  	        256
 
