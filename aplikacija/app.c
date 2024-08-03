@@ -258,7 +258,7 @@ label1:    printf("Unesite broj - clanova niza: ");
         else {
             printf("%f\n", hexToFloat((float)rx_buffer[i]));
         }
-        printf("IS INF VREDNOST: %d\n", isinf((double)hexToFloat((float)rx_buffer[i])));
+        printf("IS INF VREDNOST: %f\n", isinf((double)hexToFloat((float)rx_buffer[i])));
     }
 /*
     for(i = 0; i < array_num; i++) {
