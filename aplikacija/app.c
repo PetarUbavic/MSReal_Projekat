@@ -121,6 +121,7 @@ int main() {
     int i = 0;
     int ret = 0;
 
+    FILE *fp;
     char path[BUFFER_SIZE];
     
 
@@ -214,19 +215,19 @@ label1:    printf("Unesite broj - clanova niza: ");
     close(fd);
 */
      // Open the command for reading
-    fd = popen("cat /dev/fpu_exp", "r");
-    if (fd == NULL) {
+    fp = popen("cat /dev/fpu_exp", "r");
+    if (fp == NULL) {
         printf("Failed to run command\n");
         exit(1);
     }
 
     // Read the output a line at a time and print it
-    while (fgets(path, sizeof(path), fd) != NULL) {
+    while (fgets(path, sizeof(path), fp) != NULL) {
         printf("%s", path);
     }
 
     // Close the pipe
-    pclose(fd);
+    pclose(fp);
 
 /*
     for(i = 0; i < array_num; i++) {
