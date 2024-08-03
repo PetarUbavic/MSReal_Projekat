@@ -214,19 +214,19 @@ label1:    printf("Unesite broj - clanova niza: ");
     close(fd);
 */
      // Open the command for reading
-    fp = popen("cat /dev/fpu_exp", "r");
-    if (fp == NULL) {
+    fd = popen("cat /dev/fpu_exp", "r");
+    if (fd == NULL) {
         printf("Failed to run command\n");
         exit(1);
     }
 
     // Read the output a line at a time and print it
-    while (fgets(path, sizeof(path), fp) != NULL) {
+    while (fgets(path, sizeof(path), fd) != NULL) {
         printf("%s", path);
     }
 
     // Close the pipe
-    pclose(fp);
+    pclose(fd);
 
 /*
     for(i = 0; i < array_num; i++) {
