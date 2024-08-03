@@ -119,7 +119,6 @@ int main() {
     float value = 0;
     uint hex_value = 0;
     int i = 0;
-    int count = 0;
     int ret = 0;
 
     FILE *fp;
@@ -224,16 +223,23 @@ label1:    printf("Unesite broj - clanova niza: ");
 
     // Read the output
     if (fgets(path, sizeof(path), fp) != NULL) {
+        printf("Raw output: %s\n", path);  // Debugging line to show raw output
+
         // Tokenize the string using ',' as the delimiter
         char *token = strtok(path, ", ");
         while (token != NULL && count < 256) {
+            printf("Token: %s\n", token);  // Debugging line to show each token
             // Convert the hex string to unsigned int and store it in the array
-            sscanf(token, "%x", &rx_buffer[count]);
-            count++;
+            if (sscanf(token, "%x", &rx_buffer[count]) == 1) {
+                count++;
+            } else {
+                printf("Failed to parse token: %s\n", token);  // Debugging line
+            }
             token = strtok(NULL, ", ");
         }
+    } else {
+        printf("Failed to read from the command output\n");
     }
-
     // Close the pipe
     pclose(fp);
 
