@@ -221,13 +221,26 @@ label1:    printf("Unesite broj - clanova niza: ");
         exit(1);
     }
 
-    // Read the output a line at a time and print it
-    while (fgets(path, sizeof(path), fp) != NULL) {
-        printf("%s", path);
+    // Read the output
+    if (fgets(path, sizeof(path), fp) != NULL) {
+        // Tokenize the string using ',' as the delimiter
+        char *token = strtok(path, ", ");
+        while (token != NULL && count < 256) {
+            // Convert the hex string to unsigned int and store it in the array
+            sscanf(token, "%x", &rx_buffer[count]);
+            count++;
+            token = strtok(NULL, ", ");
+        }
     }
 
     // Close the pipe
     pclose(fp);
+
+    // Print the values for verification
+    printf("Received hex numbers:\n");
+    for (int i = 0; i < count; i++) {
+        printf("%#x\n", rx_buffer[i]);
+    }
 
 /*
     for(i = 0; i < array_num; i++) {
