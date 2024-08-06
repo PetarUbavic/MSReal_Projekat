@@ -125,6 +125,7 @@ int main() {
     int ret = 0;
 
     FILE *fp;
+    int fd;
     char path[BUFFER_SIZE];
     
 
@@ -168,7 +169,7 @@ label1:    printf("Unesite broj - clanova niza: ");
 
     #ifndef MMAP
 
-    int fd = open(DEVICE_NAME, O_RDWR);
+    fd = open(DEVICE_NAME, O_RDWR);
 
     if (fd < 0) {
         printf("Failed to open device\n");
@@ -267,7 +268,7 @@ label1:    printf("Unesite broj - clanova niza: ");
 
     // Map TX and RX buffers to the driver
     uint* tx_mmap = (uint*)mmap(0, array_num * sizeof(float), PROT_READ | PROT_WRITE, MAP_SHARED, fd, TX_BUFFER_OFFSET);
-    float* rx_mmap = (float*)mmap(NULL, array_num * sizeof(float), PROT_READ | PROT_WRITE, MAP_SHARED, fd, RX_BUFFER_OFFSET);
+//    float* rx_mmap = (float*)mmap(NULL, array_num * sizeof(float), PROT_READ | PROT_WRITE, MAP_SHARED, fd, RX_BUFFER_OFFSET);
 
     if (tx_mmap == MAP_FAILED) {
         printf("Memory mapping TX failed\n");
@@ -275,12 +276,12 @@ label1:    printf("Unesite broj - clanova niza: ");
         return errno;
     }
     
-    if (rx_mmap == MAP_FAILED) {
+/*    if (rx_mmap == MAP_FAILED) {
         printf("Memory mapping RX failed\n");
         close(fd);
         return errno;
     }
-
+*/
     // Copy data to the mapped TX buffer
     memcpy(tx_mmap, tx_buffer, array_num * sizeof(float));
 
@@ -300,7 +301,7 @@ label1:    printf("Unesite broj - clanova niza: ");
 
     // Unmap the buffers
     munmap(tx_mmap, array_num * sizeof(float));
-    munmap(rx_mmap, array_num * sizeof(float));
+//    munmap(rx_mmap, array_num * sizeof(float));
 
     close(fd);
 
