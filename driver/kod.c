@@ -135,7 +135,6 @@ u32 *rx_vir_buffer;
 volatile int transaction_over0 = 0;
 volatile int transaction_over1 = 0;
 u32 izlazni_niz[ARR_SIZE];
-u32 ulazni_niz[ARR_SIZE];
 
 //** Init & Exit Functions **//     /* VEZBA 5*/
 
@@ -475,7 +474,6 @@ ssize_t fpu_write(struct file *pfile, const char __user *buf, size_t length, lof
         }
         if (pos >= 0 && pos < arr_size) {
             fpu_array[pos] = value;
-			ulazni_niz[pos] = fpu_array[pos];
 			write_counter++;
             printk(KERN_INFO "[fpu_write] Position %d updated with value %#010x\n", pos, value);
         } else {
@@ -491,8 +489,8 @@ ssize_t fpu_write(struct file *pfile, const char __user *buf, size_t length, lof
 
 	if(write_counter == arr_size) {
 		for(pos = 0; pos < arr_size; pos++){
-			*tx_vir_buffer = ulazni_niz[pos];
-			dma_simple_write(tx_phy_buffer, sizeof(ulazni_niz), dma_p->base_addr);
+			*tx_vir_buffer = fpu_array[pos];
+			dma_simple_write(tx_phy_buffer, sizeof(fpu_array), dma_p->base_addr);
 		}
 	}
 
@@ -582,7 +580,7 @@ unsigned int dma_simple_write(dma_addr_t TxBufferPtr, unsigned int pkt_len, void
 	printk(KERN_INFO "[dma_simple_write] Sent: %#010x \n", TxBufferPtr);
 	printk(KERN_INFO "[dma_simple_write] Vrednost POSLE na adresi %p iznosi %#010x\n", tx_vir_buffer, *((unsigned int *)tx_vir_buffer));
 	printk(KERN_INFO "[dma_simple_write] Successfully wrote in DMA \n");
-	*tx_vir_buffer = ulazni_niz[cntrIn++];
+	*tx_vir_buffer = fpu_array[cntrIn++];
 	//dma_simple_write(tx_phy_buffer, MAX_PKT_LEN, dma_p->base_addr);
 	dma_simple_read(rx_phy_buffer, pkt_len, dma_p->base_addr);				
     return 0;
