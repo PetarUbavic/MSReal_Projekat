@@ -27,7 +27,7 @@ MODULE_DESCRIPTION("FPU Exp Driver");
 MODULE_LICENSE("Dual BSD/GPL");
 
 #define      DRIVER_NAME        "fpu_exp" 
-#define      BUFF_SIZE 	        4096	//256 * 10 (256 hex brojeva, svaki ima 10 znakova i jos malo lufta)
+#define      BUFF_SIZE 	        (4096*2)	//256 * 10 (256 hex brojeva, svaki ima 10 znakova i jos malo lufta)
 #define      MAX_ARRAY_SIZE     256
 #define      ARR_SIZE  	        256
 
@@ -134,7 +134,6 @@ u32 *tx_vir_buffer;
 u32 *rx_vir_buffer;
 volatile int transaction_over0 = 0;
 volatile int transaction_over1 = 0;
-u32 izlazni_niz[ARR_SIZE];
 
 //** Init & Exit Functions **//     /* VEZBA 5*/
 
