@@ -503,32 +503,19 @@ ssize_t fpu_write(struct file *pfile, const char __user *buf, size_t length, lof
 
 static int fpu_mmap(struct file *f, struct vm_area_struct *vma_s) {
     int ret = 0;
-    long lengthTx = (vma_s->vm_end - vma_s->vm_start)/2;
-	long lengthRx = (vma_s->vm_end - vma_s->vm_start)/2;
-    unsigned long pfn_offset = vma_s->vm_pgoff << PAGE_SHIFT;
+    long length = vma_s->vm_end - vma_s->vm_start;
 
     printk(KERN_INFO "[fpu_mmap] Buffer is being memory mapped\n");
-    printk(KERN_INFO "[fpu_mmap] Buffer TX Length: %ld\n", lengthTx);
-    printk(KERN_INFO "[fpu_mmap] Buffer RX Length: %ld\n", lengthRx);
-	printk(KERN_INFO "[fpu_mmap] Page Frame Offset: %lx\n", pfn_offset);
+    printk(KERN_INFO "[fpu_mmap] Buffer TX Length: %ld\n", length);
 
-    if (lengthTx > MAX_PKT_LEN) {
+    if (length > MAX_PKT_LEN) {
         printk(KERN_INFO "[fpu_mmap] Trying to mmap more space than it`s allocated\n");
         return -EIO;
     }
 
-    if (pfn_offset == 0) {
-        // Map TX buffer
-        printk(KERN_INFO "[fpu_mmap] Mapping TX Buffer\n");
-        ret = dma_mmap_coherent(NULL, vma_s, tx_vir_buffer, tx_phy_buffer, lengthTx);
-    } else if (pfn_offset == MAX_PKT_LEN) {
-        // Map RX buffer
-        printk(KERN_INFO "[fpu_mmap] Mapping RX Buffer\n");
-        ret = dma_mmap_coherent(NULL, vma_s, rx_vir_buffer, rx_phy_buffer, lengthRx);
-    } else {
-        printk(KERN_INFO "[fpu_mmap] Invalid offset for mmap\n");
-        return -EINVAL;
-    }
+	// Map TX buffer
+    printk(KERN_INFO "[fpu_mmap] Mapping TX Buffer\n");
+    ret = dma_mmap_coherent(NULL, vma_s, tx_vir_buffer, tx_phy_buffer, length);
 
     if (ret < 0) {
         printk(KERN_INFO "[fpu_mmap] Memory map failed with error: %d\n", ret);
