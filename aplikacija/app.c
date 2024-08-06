@@ -244,6 +244,22 @@ label1:    printf("Unesite broj - clanova niza: ");
     // Close the pipe
     pclose(fp);
 
+    // Print the values for verification
+    printf("Received hex numbers:\n");
+    for (i = 0; i < count; i++) {
+        printf("%#x\n", rx_buffer[i]);
+    }
+
+    printf("Received float numbers:\n");
+    for (i = 0; i < count; i++) {
+        if((double)hexToFloat((float)rx_buffer[i]) == 0) {                          // isinf((double)hexToFloat((float)rx_buffer[i])) ovo ne radi, pa cu proveriti da li je (double)hexToFloat((float)rx_buffer[i]) == 0, posto e stepenovano bilo kojim realnim brojem nije 0, onda ako je 0 znaci da je rezultat beskonacno
+            printf("Inf\n");
+        }
+        else {
+            printf("%f\n", hexToFloat((float)rx_buffer[i]));
+        }
+    }
+    
     #else
 
     fd = open(DEVICE_NAME, O_RDWR);
@@ -288,47 +304,27 @@ label1:    printf("Unesite broj - clanova niza: ");
     close(fd);
 
     #endif
-
+/*
     // Measure execution time on CPU
-    start_time = get_time_in_us();
-    for (i = 0; i < 256; i++) {
-        //rx_buffer_cpu[i] = exp(hexToFloat(tx_buffer[i]));
-        rx_buffer_cpu[i] = exp(1.78);
+    long start_time = get_time_in_us();
+    for (i = 0; i < array_num; i++) {
+        rx_buffer_cpu[i] = exp(hexToFloat(tx_buffer[i]));
     }
-    end_time = get_time_in_us();
+    long end_time = get_time_in_us();
     long cpu_time = end_time - start_time;
 
-/*    // Print the results
+    // Print the results
     for (i = 0; i < array_num; i++) {
         printf("Result[%d] = %f\n", i, rx_buffer_cpu[i]);
     }
-*/
-    printf("CPU execution time for 256 float numbers: %ld us\n", cpu_time);
 
-/*    
+    printf("CPU execution time: %ld us\n", cpu_time);
+
+    
     // Print the results
     for (i = 0; i < array_num; i++) {
         printf("FPGA Result[%d] = %f\n", i, rx_buffer[i]);
     }
 */
-
-    
-    // Print the results
-    printf("Received hex numbers:\n");
-    for (i = 0; i < count; i++) {
-        printf("%#x\n", rx_buffer[i]);
-    }
-
-    printf("Received float numbers:\n");
-    for (i = 0; i < count; i++) {
-        if((double)hexToFloat((float)rx_buffer[i]) == 0) {                          // isinf((double)hexToFloat((float)rx_buffer[i])) ovo ne radi, pa cu proveriti da li je (double)hexToFloat((float)rx_buffer[i]) == 0, posto e stepenovano bilo kojim realnim brojem nije 0, onda ako je 0 znaci da je rezultat beskonacno
-            printf("Inf\n");
-        }
-        else {
-            printf("%f\n", hexToFloat((float)rx_buffer[i]));
-        }
-    }
-    
-
     return 0;
 }
