@@ -147,7 +147,7 @@ label1:    printf("Unesite broj - clanova niza: ");
     if (array_num == 256) {
 
         for(i = 0; i < array_num; i++) {
-            tx_buffer[i] = floatToHex(7);    // zato sto se dobija skoro ceo broj
+            tx_buffer[i] = floatToHex(1);
         }
     }
 
