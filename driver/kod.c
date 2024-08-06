@@ -33,7 +33,7 @@ MODULE_LICENSE("Dual BSD/GPL");
 
 
 //** DMA defines **//
-#define MAX_PKT_LEN				4096	//(256*szeof(float))
+#define MAX_PKT_LEN				4096	//(256*sizeof(float))
 
 #define MM2S_DMACR_REG			0x00
 #define MM2S_SA_REG				0x18
@@ -392,9 +392,9 @@ ssize_t fpu_read(struct file *pfile, char __user *buf, size_t length, loff_t *of
 
     // Populate the kernel buffer with the array values
     for (i = 0; i < arr_size; i++) {
-		printk(KERN_INFO "[fpu_read] Izlazni_niz[%d]: %#010x\n", i, izlazni_niz[i]);
+		printk(KERN_INFO "[fpu_read] Izlazni_niz[%d]: %#010x\n", i, fpu_array[i]);
 
-        len += snprintf(kernel_buf + len, BUFF_SIZE - len, "0x%08x", izlazni_niz[i]);
+        len += snprintf(kernel_buf + len, BUFF_SIZE - len, "0x%08x", fpu_array[i]);
         if (i < arr_size - 1) {
             len += snprintf(kernel_buf + len, BUFF_SIZE - len, ", ");
         }
@@ -636,8 +636,8 @@ static irqreturn_t dma_S2MM_isr(int irq, void* dev_id){
 	IrqStatus = ioread32(dma_p->base_addr + S2MM_STATUS_REG);
 	iowrite32(IrqStatus | 0x00007000, dma_p->base_addr + S2MM_STATUS_REG);
 	printk(KERN_INFO "[dma_isr] Finished DMA S2MM transaction!\n");
-	izlazni_niz[posOut] = *rx_vir_buffer;
-	printk(KERN_INFO "[dma_isr] RESULT %d: %#x\n", posOut, izlazni_niz[posOut]);
+	fpu_array[posOut] = *rx_vir_buffer;
+	printk(KERN_INFO "[dma_isr] RESULT %d: %#x\n", posOut, fpu_array[posOut]);
 	posOut++;
 	transaction_over1 = 0;
 	
