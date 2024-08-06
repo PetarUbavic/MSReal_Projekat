@@ -14,6 +14,8 @@
 #define TX_BUFFER_OFFSET 0x00
 #define RX_BUFFER_OFFSET 0x2048
 
+#define MMAP 1
+
 uint floatToHex(float num) {
 	uint newNum;
 	if(num == 0) {
@@ -264,7 +266,7 @@ label1:    printf("Unesite broj - clanova niza: ");
     fd = open(DEVICE_NAME, O_RDWR);
 
     // Map TX and RX buffers to the driver
-    float* tx_mmap = (float*)mmap(0, array_num * sizeof(float), PROT_READ | PROT_WRITE, MAP_SHARED, fd, TX_BUFFER_OFFSET);
+    uint* tx_mmap = (uint*)mmap(0, array_num * sizeof(float), PROT_READ | PROT_WRITE, MAP_SHARED, fd, TX_BUFFER_OFFSET);
     float* rx_mmap = (float*)mmap(NULL, array_num * sizeof(float), PROT_READ | PROT_WRITE, MAP_SHARED, fd, RX_BUFFER_OFFSET);
 
     if (tx_mmap == MAP_FAILED) {
