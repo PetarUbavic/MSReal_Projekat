@@ -525,7 +525,7 @@ static int fpu_mmap(struct file *f, struct vm_area_struct *vma_s) {
 	printk(KERN_INFO "[fpu_mmap] Memory map succeeded\n");
 	printk(KERN_INFO "[fpu_mmap] Calling dma_simple_write\n");
 
-	dma_simple_write(tx_phy_buffer, sizeof(tx_vir_buffer), vp->base_addr);
+	dma_simple_write(tx_phy_buffer, sizeof(tx_vir_buffer), dma_p->base_addr);
 
     return 0;
 }
