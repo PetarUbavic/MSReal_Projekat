@@ -229,7 +229,7 @@ label1:    printf("Unesite broj - clanova niza: ");
         // Tokenize the string using ',' as the delimiter
         char *token = strtok(path, ", ");
         while (token != NULL && count < 256) {
-            printf("Token: %s\n", token);  // Debugging line to show each token
+           // printf("Token: %s\n", token);  // Debugging line to show each token
             // Convert the hex string to unsigned int and store it in the array
             if (sscanf(token, "0x%x", &rx_buffer[count]) == 1) {
                 count++;
