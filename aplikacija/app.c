@@ -259,7 +259,7 @@ label1:    printf("Unesite broj - clanova niza: ");
             printf("%f\n", hexToFloat((float)rx_buffer[i]));
         }
     }
-    
+
     #else
 
     fd = open(DEVICE_NAME, O_RDWR);
@@ -304,21 +304,22 @@ label1:    printf("Unesite broj - clanova niza: ");
     close(fd);
 
     #endif
-/*
+
     // Measure execution time on CPU
-    long start_time = get_time_in_us();
+    start_time = get_time_in_us();
     for (i = 0; i < array_num; i++) {
         rx_buffer_cpu[i] = exp(hexToFloat(tx_buffer[i]));
     }
-    long end_time = get_time_in_us();
+    end_time = get_time_in_us();
     long cpu_time = end_time - start_time;
+    
+    printf("CPU execution time: %ld us\n", cpu_time);
 
+/*
     // Print the results
     for (i = 0; i < array_num; i++) {
         printf("Result[%d] = %f\n", i, rx_buffer_cpu[i]);
     }
-
-    printf("CPU execution time: %ld us\n", cpu_time);
 
     
     // Print the results
