@@ -224,7 +224,7 @@ label1:    printf("Unesite broj - clanova niza: ");
 
     // Read the output
     if (fgets(path, sizeof(path), fp) != NULL) {
-        printf("Raw output: %s\n", path);  // Debugging line to show raw output
+        // printf("Raw output: %s\n", path);  // Debugging line to show raw output
 
         // Tokenize the string using ',' as the delimiter
         char *token = strtok(path, ", ");
