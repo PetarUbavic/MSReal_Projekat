@@ -1,4 +1,4 @@
-//** Kernel headers **//
+//** Kernel headers **//		// 192.168.1.107 Port 22 - 555333
 
 #include <linux/kernel.h>
 #include <linux/module.h>
@@ -180,24 +180,6 @@ static int __init fpu_init(void) {
 	}
 	printk(KERN_INFO "[fpu_init] Module init done\n");
 
-/*
-
-    // Set the coherent DMA mask
-    ret = dma_set_coherent_mask(my_device, DMA_BIT_MASK(32));
-    if (ret) {
-        printk(KERN_ERR "[fpu_init] Failed to set coherent DMA mask\n");
-        platform_device_unregister(my_device);
-        return ret;
-    }
-
-    // Optionally, set the DMA mask
-    ret = dma_set_mask(my_device, DMA_BIT_MASK(32));
-    if (ret) {
-        printk(KERN_ERR "[fpu_init] Failed to set DMA mask\n");
-        platform_device_unregister(my_device);
-        return ret;
-    }
-*/
     // Allocate coherent DMA buffer
 	tx_vir_buffer = dma_alloc_coherent(NULL, MAX_PKT_LEN, &tx_phy_buffer, GFP_DMA | GFP_KERNEL);
 	printk(KERN_INFO "[fpu_init] Virtual and physical TX addresses coherent starting at %#x and ending at %#x\n", tx_phy_buffer, tx_phy_buffer+(uint)(MAX_PKT_LEN));
@@ -211,8 +193,6 @@ static int __init fpu_init(void) {
 		printk("[fpu_init] Successfully allocated memory for transmission buffer\n");
 	}
 
-	//*tx_vir_buffer = 0;
-
 	rx_vir_buffer = dma_alloc_coherent(NULL, MAX_PKT_LEN, &rx_phy_buffer, GFP_DMA | GFP_KERNEL);
 	printk(KERN_INFO "[fpu_init] Virtual and physical RX addresses coherent starting at %#x and ending at %#x\n", rx_phy_buffer, rx_phy_buffer+(uint)(MAX_PKT_LEN));
 	if(!rx_vir_buffer) {
@@ -225,16 +205,11 @@ static int __init fpu_init(void) {
 		printk("[fpu_init] Successfully allocated memory for receiving buffer\n");
 	}
 
-	//*rx_vir_buffer = 0;
-
 	printk(KERN_INFO "[fpu_init] Memory reset.\n");
 
-	//ret = 7;
-	//ret = fpu_probe(plt_dev);
-	//printk(KERN_INFO "Manual probe call returned %d\n", ret);
+	
 	return platform_driver_register(&fpu_exp);
-	//return ret;
-
+	
 	// Error handling and cleanup       //fail_3 nema na vezbama 5, ovde ima zog dma_alloc_coherent funkcije
 	fail_3:
 		cdev_del(my_cdev);
@@ -418,10 +393,7 @@ ssize_t fpu_read(struct file *pfile, char __user *buf, size_t length, loff_t *of
 
     // Populate the kernel buffer with the array values
     for (i = 0; i < arr_size; i++) {
-/*		izlazni_niz[i] = 0;
-		dma_simple_read(rx_phy_buffer, sizeof(izlazni_niz[i]), dma_p->base_addr);
-		izlazni_niz[i] = *rx_vir_buffer;
-*/		printk(KERN_INFO "[fpu_read] Izlazni_niz[%d]: %#010x\n", i, izlazni_niz[i]);
+		printk(KERN_INFO "[fpu_read] Izlazni_niz[%d]: %#010x\n", i, izlazni_niz[i]);
 
         len += snprintf(kernel_buf + len, BUFF_SIZE - len, "0x%08x", izlazni_niz[i]);
         if (i < arr_size - 1) {
@@ -520,17 +492,9 @@ ssize_t fpu_write(struct file *pfile, const char __user *buf, size_t length, lof
 	if(write_counter == arr_size) {
 		for(pos = 0; pos < arr_size; pos++){
 			*tx_vir_buffer = ulazni_niz[pos];
-
-			printk(KERN_INFO "[fpu_write] -----ulazni_niz: %#010x\n", ulazni_niz[pos]);
-			printk(KERN_INFO "[fpu_write] -----tx_phy_buffer: %#010x\n", tx_phy_buffer);
-			printk(KERN_INFO "[fpu_write] -----*tx_vir_buffer: %#010x\n", *tx_vir_buffer);
-			printk(KERN_INFO "[fpu_write] -----tx_vir_buffer: %#010x\n", tx_vir_buffer);
 			dma_simple_write(tx_phy_buffer, sizeof(ulazni_niz), dma_p->base_addr);
 		}
 	}
-
-	printk(KERN_INFO "[fpu_write] Counter je: %d \n", write_counter);
-	printk(KERN_INFO "[fpu_write] Arr_size je: %d \n", arr_size);
 
     return length;
 }
