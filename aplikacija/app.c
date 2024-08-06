@@ -290,12 +290,12 @@ label1:    printf("Unesite broj - clanova niza: ");
     #endif
 
     // Measure execution time on CPU
-    long start_time = get_time_in_us();
+    start_time = get_time_in_us();
     for (i = 0; i < 256; i++) {
         //rx_buffer_cpu[i] = exp(hexToFloat(tx_buffer[i]));
         rx_buffer_cpu[i] = exp(1.78);
     }
-    long end_time = get_time_in_us();
+    end_time = get_time_in_us();
     long cpu_time = end_time - start_time;
 
 /*    // Print the results
