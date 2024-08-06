@@ -87,7 +87,7 @@ int write_data_count(int fd, int count) {
 int write_data_to_position(int fd, int position, uint number) {
     char command[40];
     sprintf(command, "Pozicija=%d=0x%08x", position, *(unsigned int*)&number);
-    lseek(fd, position * sizeof(float), SEEK_SET);
+    lseek(fd, position * sizeof(uint), SEEK_SET);
 
     if ((write(fd, command, strlen(command))) < 0) {
         return -1;
@@ -213,13 +213,9 @@ label1:    printf("Unesite broj - clanova niza: ");
 
         close(fd);
     }
-    // Read processed data
-/*    fd = open(DEVICE_NAME, O_RDWR);
 
-    read_processed_data(fd, rx_buffer);
-    close(fd);
-*/
-     // Open the command for reading
+    // Read processed data
+    // Open the command for reading
     fp = popen("cat /dev/fpu_exp", "r");
     if (fp == NULL) {
         printf("Failed to run command\n");
