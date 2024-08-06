@@ -123,6 +123,8 @@ int main() {
     int i = 0;
     int count = 0;
     int ret = 0;
+    long start_time = 0;
+    long end_time = 0;
 
     FILE *fp;
     int fd;
@@ -297,7 +299,7 @@ label1:    printf("Unesite broj - clanova niza: ");
     printf("FPGA execution time: %ld us\n", fpga_time);
 
     // Copy processed data from the mapped RX buffer
-    memcpy(rx_buffer, rx_mmap, array_num * sizeof(float));
+//    memcpy(rx_buffer, rx_mmap, array_num * sizeof(float));
 
     // Unmap the buffers
     munmap(tx_mmap, array_num * sizeof(float));
