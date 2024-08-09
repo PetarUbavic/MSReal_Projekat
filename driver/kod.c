@@ -485,7 +485,6 @@ ssize_t fpu_write(struct file *pfile, const char __user *buf, size_t length, lof
 		for(pos = 0; pos < arr_size; pos++){
 
 			dma_simple_write(tx_phy_buffer, arr_size*sizeof(uint), dma_p->base_addr);
-			*tx_vir_buffer++;
 		}
 	}
 
@@ -588,6 +587,7 @@ unsigned int dma_simple_write(dma_addr_t TxBufferPtr, unsigned int pkt_len, void
 	printk(KERN_INFO "[dma_simple_write] Vrednost POSLE na adresi %p iznosi %#010x\n", tx_vir_buffer, *((unsigned int *)tx_vir_buffer));
 	printk(KERN_INFO "[dma_simple_write] Successfully wrote in DMA \n");
 	//*tx_vir_buffer = fpu_array[cntrIn++];
+	*tx_vir_buffer++;
 	//dma_simple_write(tx_phy_buffer, MAX_PKT_LEN, dma_p->base_addr);
 	dma_simple_read(rx_phy_buffer, pkt_len, dma_p->base_addr);				
     return 0;
