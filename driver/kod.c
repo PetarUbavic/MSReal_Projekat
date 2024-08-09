@@ -483,8 +483,8 @@ ssize_t fpu_write(struct file *pfile, const char __user *buf, size_t length, lof
 	else if (sscanf(kernel_buf, "START") == 0) {
 		printk(KERN_WARNING "[fpu_write] Usao sam u novi if\n");
 		for(pos = 0; pos < arr_size; pos++){
-			*tx_vir_buffer = fpu_array[pos];
-			dma_simple_write(tx_phy_buffer, sizeof(fpu_array), dma_p->base_addr);
+
+			dma_simple_write(tx_phy_buffer, array_num*sizeof(uint), dma_p->base_addr);
 		}
 	}
 
@@ -498,6 +498,7 @@ ssize_t fpu_write(struct file *pfile, const char __user *buf, size_t length, lof
 		for(pos = 0; pos < arr_size; pos++){
 			*tx_vir_buffer = fpu_array[pos];
 			dma_simple_write(tx_phy_buffer, sizeof(fpu_array), dma_p->base_addr);
+			//*tx_vir_buffer = fpu_array[cntrIn++];
 		}
 	}
 
@@ -529,13 +530,7 @@ static int fpu_mmap(struct file *f, struct vm_area_struct *vma_s) {
     }
 
 	printk(KERN_INFO "[fpu_mmap] Memory map succeeded\n");
-	printk(KERN_INFO "[fpu_mmap] Calling dma_simple_write\n");
-/*
-	for(pos = 0; pos < arr_size; pos++){
-		//*tx_vir_buffer = fpu_array[pos];
-		dma_simple_write(tx_phy_buffer, sizeof(fpu_array), dma_p->base_addr);
-		}
-*/	
+
     return 0;
 }
 
@@ -591,7 +586,7 @@ unsigned int dma_simple_write(dma_addr_t TxBufferPtr, unsigned int pkt_len, void
 	printk(KERN_INFO "[dma_simple_write] Sent: %#010x \n", TxBufferPtr);
 	printk(KERN_INFO "[dma_simple_write] Vrednost POSLE na adresi %p iznosi %#010x\n", tx_vir_buffer, *((unsigned int *)tx_vir_buffer));
 	printk(KERN_INFO "[dma_simple_write] Successfully wrote in DMA \n");
-	*tx_vir_buffer = fpu_array[cntrIn++];
+	//*tx_vir_buffer = fpu_array[cntrIn++];
 	//dma_simple_write(tx_phy_buffer, MAX_PKT_LEN, dma_p->base_addr);
 	dma_simple_read(rx_phy_buffer, pkt_len, dma_p->base_addr);				
     return 0;
