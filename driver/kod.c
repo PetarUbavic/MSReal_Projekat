@@ -486,6 +486,7 @@ ssize_t fpu_write(struct file *pfile, const char __user *buf, size_t length, lof
 			dma_simple_write(tx_phy_buffer, sizeof(uint), dma_p->base_addr);
 			tx_phy_buffer += sizeof(uint);		// sluzi da prolazi kroz memoriju direktno, nisam uspeo preko vir da resim
 		}
+		*tx_vir_buffer = fpu_array;
 	}
 
     // Invalid command
@@ -643,8 +644,6 @@ static irqreturn_t dma_S2MM_isr(int irq, void* dev_id){
 	iowrite32(IrqStatus | 0x00007000, dma_p->base_addr + S2MM_STATUS_REG);
 	printk(KERN_INFO "[dma_isr] Finished DMA S2MM transaction!\n");
 	fpu_array[posOut] = *rx_vir_buffer;
-	tx_phy_buffer = fpu_array[posOut];
-	//tx_phy_buffer += sizeof(uint);
 	printk(KERN_INFO "[dma_isr] RESULT %d: %#x\n", posOut, fpu_array[posOut]);
 	posOut++;
 	transaction_over1 = 0;
