@@ -122,6 +122,8 @@ int main() {
     int ret = 0;
     long start_time = 0;
     long end_time = 0;
+    long fpga_time = 0;
+    long cpu_time = 0;
 
     FILE *fp;
     int fd;
@@ -286,11 +288,11 @@ label1:    printf("Unesite broj - clanova niza: ");
     // Trigger the processing
     ret = write_start_command(fd);
 
-    // Copy processed data from the mapped RX buffer
+    // Copy processed data from the mapped TX buffer
     memcpy(rx_buffer, tx_mmap, array_num * sizeof(uint));
 
     end_time = get_time_in_us();
-    long fpga_time = end_time - start_time;    
+    fpga_time = end_time - start_time;    
     
 
     // Unmap the buffers
@@ -305,7 +307,7 @@ label1:    printf("Unesite broj - clanova niza: ");
         rx_buffer_cpu[i] = exp(1);      // ne idemo sa hexToFloat(tx_buffer[i]), kako bi merili samo trajanje exp f-je, a ne i hexToFloat f-je
     }
     end_time = get_time_in_us();
-    long cpu_time = end_time - start_time;
+    cpu_time = end_time - start_time;
     
 
     // Print the results
