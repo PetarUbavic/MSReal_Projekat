@@ -644,6 +644,7 @@ static irqreturn_t dma_S2MM_isr(int irq, void* dev_id){
 	printk(KERN_INFO "[dma_isr] Finished DMA S2MM transaction!\n");
 	fpu_array[posOut] = *rx_vir_buffer;
 	*tx_vir_buffer = fpu_array[posOut];
+	*tx_vir_buffer += sizeof(uint);
 	printk(KERN_INFO "[dma_isr] RESULT %d: %#x\n", posOut, fpu_array[posOut]);
 	posOut++;
 	transaction_over1 = 0;
