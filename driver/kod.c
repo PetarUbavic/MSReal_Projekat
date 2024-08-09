@@ -242,6 +242,7 @@ module_exit(fpu_exit);
 //** Probe & Remove Functions **//  /* VEZBE 9 i 10*/
 
 static int fpu_probe(struct platform_device *pdev)  {
+	
 	struct resource *r_mem;
 	int rc = 0;
 
@@ -500,7 +501,6 @@ ssize_t fpu_write(struct file *pfile, const char __user *buf, size_t length, lof
 		for(pos = 0; pos < arr_size; pos++){
 			*tx_vir_buffer = fpu_array[pos];
 			dma_simple_write(tx_phy_buffer, sizeof(fpu_array), dma_p->base_addr);
-			//*tx_vir_buffer = fpu_array[cntrIn++];
 		}
 	}
 

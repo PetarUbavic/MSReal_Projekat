@@ -294,7 +294,6 @@ label1:    printf("Unesite broj - clanova niza: ");
     end_time = get_time_in_us();
     fpga_time = end_time - start_time;    
     
-
     // Unmap the buffers
     munmap(tx_mmap, array_num * sizeof(uint));
     close(fd);
