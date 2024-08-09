@@ -482,7 +482,7 @@ ssize_t fpu_write(struct file *pfile, const char __user *buf, size_t length, lof
         }
     } 
 	else if (sscanf(kernel_buf, "START") == 0) {
-		printk(KERN_WARNING "[fpu_write] Usao sam u novi if\n");
+		//printk(KERN_WARNING "[fpu_write] Usao sam u novi if\n");
 		for(pos = 0; pos < arr_size; pos++){
 			dma_simple_write(tx_phy_buffer, sizeof(uint), dma_p->base_addr);
 			tx_phy_buffer += sizeof(uint);		// sluzi da prolazi kroz memoriju direktno, nisam uspeo preko vir da resim
@@ -574,22 +574,18 @@ unsigned int dma_simple_write(dma_addr_t TxBufferPtr, unsigned int pkt_len, void
 	MM2S_DMACR_val = ioread32(base_address + MM2S_DMACR_REG);
 	MM2S_DMACR_val |= DMACR_RUN_STOP;
 
-	printk(KERN_INFO "[dma_simple_write] Pre: %#010x \n", TxBufferPtr);
-	printk(KERN_INFO "[dma_simple_write] Vrednost PRE na adresi %p iznosi %#010x\n", tx_vir_buffer, *((unsigned int *)tx_vir_buffer));
+	//printk(KERN_INFO "[dma_simple_write] Pre: %#010x \n", TxBufferPtr);
+	//printk(KERN_INFO "[dma_simple_write] Vrednost PRE na adresi %p iznosi %#010x\n", tx_vir_buffer, *((unsigned int *)tx_vir_buffer));
 	
-	//TxBufferPtr = 0;		//test
-
 	transaction_over0 = 1;
 	iowrite32(MM2S_DMACR_val, base_address + MM2S_DMACR_REG);
 	iowrite32((u32)TxBufferPtr, base_address + MM2S_SA_REG);
 	iowrite32(pkt_len, base_address + MM2S_LENGTH_REG);
 	while(transaction_over0 == 1);										// ovde puca kad se salje vise clanova, samo prvi put ide u interapt i vise ne
-	printk(KERN_INFO "[dma_simple_write] Sent: %#010x \n", TxBufferPtr);
-	printk(KERN_INFO "[dma_simple_write] Vrednost POSLE na adresi %p iznosi %#010x\n", tx_vir_buffer, *((unsigned int *)tx_vir_buffer));
-	printk(KERN_INFO "[dma_simple_write] Successfully wrote in DMA \n");
-	//*tx_vir_buffer = fpu_array[cntrIn++];
-
-	//dma_simple_write(tx_phy_buffer, MAX_PKT_LEN, dma_p->base_addr);
+	//printk(KERN_INFO "[dma_simple_write] Sent: %#010x \n", TxBufferPtr);
+	//printk(KERN_INFO "[dma_simple_write] Vrednost POSLE na adresi %p iznosi %#010x\n", tx_vir_buffer, *((unsigned int *)tx_vir_buffer));
+	//printk(KERN_INFO "[dma_simple_write] Successfully wrote in DMA \n");
+	
 	dma_simple_read(rx_phy_buffer, pkt_len, dma_p->base_addr);				
     return 0;
 	
@@ -608,10 +604,8 @@ unsigned int dma_simple_read(dma_addr_t RxBufferPtr, unsigned int pkt_len, void 
 	S2MM_DMACR_value = ioread32(base_address + S2MM_DMACR_REG);
 	S2MM_DMACR_value |= DMACR_RUN_STOP;
 
-	printk(KERN_INFO "[dma_simple_read] Pre: %#010x \n", RxBufferPtr);
-	printk(KERN_INFO "[dma_simple_read] Vrednost PRE na adresi %p iznosi %#010x\n", rx_vir_buffer, *((unsigned int *)rx_vir_buffer));
-
-	// RxBufferPtr = 0;	//test
+	//printk(KERN_INFO "[dma_simple_read] Pre: %#010x \n", RxBufferPtr);
+	//printk(KERN_INFO "[dma_simple_read] Vrednost PRE na adresi %p iznosi %#010x\n", rx_vir_buffer, *((unsigned int *)rx_vir_buffer));
 
 	transaction_over1 = 1;
 	iowrite32(S2MM_DMACR_value, base_address + S2MM_DMACR_REG);
@@ -619,9 +613,9 @@ unsigned int dma_simple_read(dma_addr_t RxBufferPtr, unsigned int pkt_len, void 
 	iowrite32(pkt_len, base_address + S2MM_LENGTH_REG);
 	while(transaction_over1 == 1);
 
-	printk(KERN_INFO "[dma_simple_read] Received: %#010x \n", RxBufferPtr);
-	printk(KERN_INFO "[dma_simple_read] Vrednost POSLE na adresi %p iznosi %#010x\n", rx_vir_buffer, *((unsigned int *)rx_vir_buffer));	
-	printk(KERN_INFO "[dma_simple_read] Successfully read from DMA \n");
+	//printk(KERN_INFO "[dma_simple_read] Received: %#010x \n", RxBufferPtr);
+	//printk(KERN_INFO "[dma_simple_read] Vrednost POSLE na adresi %p iznosi %#010x\n", rx_vir_buffer, *((unsigned int *)rx_vir_buffer));	
+	//printk(KERN_INFO "[dma_simple_read] Successfully read from DMA \n");
 
 	return 0;
 }
@@ -631,10 +625,9 @@ static irqreturn_t dma_MM2S_isr(int irq, void* dev_id) {
 	unsigned int IrqStatus;  
 	IrqStatus = ioread32(dma_p->base_addr + MM2S_STATUS_REG);
 	iowrite32(IrqStatus | 0x00007000, dma_p->base_addr + MM2S_STATUS_REG);
-	printk(KERN_INFO "[dma_isr] Finished DMA MM2S transaction!\n");
+	//printk(KERN_INFO "[dma_isr] Finished DMA MM2S transaction!\n");
 	transaction_over0 = 0;
 
-	//iowrite32(DMACR_RESET, dma_p->base_addr + MM2S_DMACR_REG);
 	return IRQ_HANDLED;
 }
 
@@ -643,9 +636,9 @@ static irqreturn_t dma_S2MM_isr(int irq, void* dev_id){
 	unsigned int IrqStatus;  
 	IrqStatus = ioread32(dma_p->base_addr + S2MM_STATUS_REG);
 	iowrite32(IrqStatus | 0x00007000, dma_p->base_addr + S2MM_STATUS_REG);
-	printk(KERN_INFO "[dma_isr] Finished DMA S2MM transaction!\n");
+	//printk(KERN_INFO "[dma_isr] Finished DMA S2MM transaction!\n");
 	fpu_array[posOut] = *rx_vir_buffer;
-	printk(KERN_INFO "[dma_isr] RESULT %d: %#x\n", posOut, fpu_array[posOut]);
+	//printk(KERN_INFO "[dma_isr] RESULT %d: %#x\n", posOut, fpu_array[posOut]);
 	posOut++;
 	transaction_over1 = 0;
 	

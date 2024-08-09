@@ -10,7 +10,7 @@
 #include <math.h>
 
 #define DEVICE_NAME "/dev/fpu_exp"
-#define BUFFER_SIZE 4096
+#define BUFFER_SIZE 4096            // sa 256 prilikom iscitavanja moze da se procita samo 21 clan niza, ovako moze svih 256 clanova niza 
 #define TX_BUFFER_OFFSET 0x00
 #define RX_BUFFER_OFFSET 0x2048
 
