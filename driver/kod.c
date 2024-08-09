@@ -484,7 +484,7 @@ ssize_t fpu_write(struct file *pfile, const char __user *buf, size_t length, lof
 		printk(KERN_WARNING "[fpu_write] Usao sam u novi if\n");
 		for(pos = 0; pos < arr_size; pos++){
 
-			dma_simple_write(tx_phy_buffer, arr_size*sizeof(uint), dma_p->base_addr);
+			dma_simple_write(tx_phy_buffer, 4096, dma_p->base_addr);
 		}
 	}
 
