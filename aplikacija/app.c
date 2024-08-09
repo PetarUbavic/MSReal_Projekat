@@ -340,7 +340,7 @@ label1:    printf("Unesite broj - clanova niza: ");
 */    
     // Print the results
     for (i = 0; i < array_num; i++) {
-        printf("FPGA Result[%d] = %f\n", i, rx_buffer[i]);
+        printf("FPGA Result[%d] = %f\n", i, hexToFloat(rx_buffer[i]));
     }
 
     return 0;

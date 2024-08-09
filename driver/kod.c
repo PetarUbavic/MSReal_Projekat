@@ -483,7 +483,6 @@ ssize_t fpu_write(struct file *pfile, const char __user *buf, size_t length, lof
 	else if (sscanf(kernel_buf, "START") == 0) {
 		printk(KERN_WARNING "[fpu_write] Usao sam u novi if\n");
 		for(pos = 0; pos < arr_size; pos++){
-
 			dma_simple_write(tx_phy_buffer, sizeof(uint), dma_p->base_addr);
 			tx_phy_buffer += sizeof(uint);		// sluzi da prolazi kroz memoriju direktno, nisam uspeo preko vir da resim
 		}
