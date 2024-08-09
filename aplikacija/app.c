@@ -299,7 +299,7 @@ label1:    printf("Unesite broj - clanova niza: ");
         return errno;
     } 
     else {
-        printf("Successfully wrote %zd to the device\n", array_num);
+        printf("Successfully wrote START to the device\n");
     }
 
     // Measure execution time on FPGA
