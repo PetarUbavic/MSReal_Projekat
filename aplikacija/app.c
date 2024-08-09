@@ -14,7 +14,7 @@
 #define TX_BUFFER_OFFSET 0x00
 #define RX_BUFFER_OFFSET 0x2048
 
-//#define MMAP
+#define MMAP
 
 uint floatToHex(float num) {
 	uint newNum;
