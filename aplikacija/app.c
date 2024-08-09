@@ -311,7 +311,7 @@ label1:    printf("Unesite broj - clanova niza: ");
     printf("FPGA execution time: %ld us\n", fpga_time);
 
     // Copy processed data from the mapped RX buffer
-//    memcpy(rx_buffer, rx_mmap, array_num * sizeof(float));
+    memcpy(rx_buffer, tx_mmap, array_num * sizeof(uint));
 
     // Unmap the buffers
     munmap(tx_mmap, array_num * sizeof(uint));
@@ -337,11 +337,11 @@ label1:    printf("Unesite broj - clanova niza: ");
         printf("Result[%d] = %f\n", i, rx_buffer_cpu[i]);
     }
 
-    
+*/    
     // Print the results
     for (i = 0; i < array_num; i++) {
         printf("FPGA Result[%d] = %f\n", i, rx_buffer[i]);
     }
-*/
+
     return 0;
 }
