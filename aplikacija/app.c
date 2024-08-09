@@ -291,7 +291,7 @@ label1:    printf("Unesite broj - clanova niza: ");
 
     end_time = get_time_in_us();
     long fpga_time = end_time - start_time;    
-    printf("FPGA execution time: %ld us\n", fpga_time);
+    
 
     // Unmap the buffers
     munmap(tx_mmap, array_num * sizeof(uint));
@@ -302,17 +302,24 @@ label1:    printf("Unesite broj - clanova niza: ");
     // Measure execution time on CPU
     start_time = get_time_in_us();
     for (i = 0; i < array_num; i++) {
-        rx_buffer_cpu[i] = exp(1);      //ne idemo sa hexToFloat(tx_buffer[i]), kako bi merili samo trajanje exp f-je, a ne i hexToFloat f-je
+        rx_buffer_cpu[i] = exp(1);      // ne idemo sa hexToFloat(tx_buffer[i]), kako bi merili samo trajanje exp f-je, a ne i hexToFloat f-je
     }
     end_time = get_time_in_us();
     long cpu_time = end_time - start_time;
     
-    printf("CPU execution time: %ld us\n", cpu_time);
 
     // Print the results
     for (i = 0; i < array_num; i++) {
-        printf("FPGA Result[%d] = %f\n", i, hexToFloat(rx_buffer[i]));
+         if((double)hexToFloat((float)rx_buffer[i]) == 0) {
+            printf("FPGA Result[%d] = Inf\n", i);
+        }
+        else {
+            printf("FPGA Result[%d] = %f\n", i, hexToFloat(rx_buffer[i]));
+        }
     }
+
+    printf("FPGA execution time: %ld us\n", fpga_time);
+    printf("CPU execution time: %ld us\n", cpu_time);
 
     return 0;
 }
