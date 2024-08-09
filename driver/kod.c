@@ -480,6 +480,14 @@ ssize_t fpu_write(struct file *pfile, const char __user *buf, size_t length, lof
             return -EINVAL;
         }
     } 
+	else if (sscanf(kernel_buf, "START" == 0) {
+		printk(KERN_WARNING "[fpu_write] Usao sam u novi if\n");
+		for(pos = 0; pos < arr_size; pos++){
+			*tx_vir_buffer = fpu_array[pos];
+			dma_simple_write(tx_phy_buffer, sizeof(fpu_array), dma_p->base_addr);
+		}
+	}
+
     // Invalid command
     else {
         printk(KERN_WARNING "[fpu_write] Invalid command format\n");
@@ -522,12 +530,12 @@ static int fpu_mmap(struct file *f, struct vm_area_struct *vma_s) {
 
 	printk(KERN_INFO "[fpu_mmap] Memory map succeeded\n");
 	printk(KERN_INFO "[fpu_mmap] Calling dma_simple_write\n");
-
+/*
 	for(pos = 0; pos < arr_size; pos++){
 		//*tx_vir_buffer = fpu_array[pos];
 		dma_simple_write(tx_phy_buffer, sizeof(fpu_array), dma_p->base_addr);
 		}
-	
+*/	
     return 0;
 }
 
