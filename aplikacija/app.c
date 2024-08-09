@@ -99,6 +99,18 @@ int write_data_to_position(int fd, int position, uint number) {
     }
 }
 
+int write_start_command(int fd) {
+    char command[20];
+    sprintf(command, "START");
+
+    if (write(fd, command, strlen(command)) < 0) {
+        return -1; // Return -1 if the write operation fails
+    } else {
+        return 0; // Return 0 on success
+    }
+}
+
+
 
 int main() {
 
@@ -250,6 +262,10 @@ label1:    printf("Unesite broj - clanova niza: ");
     #else
 
     fd = open(DEVICE_NAME, O_RDWR);
+    if (fd < 0) {
+        printf("Failed to open device\n");
+        return errno;
+    }
 
     // Map TX and RX buffers to the driver
     uint* tx_mmap = (uint*)mmap(0, array_num * sizeof(uint), PROT_READ | PROT_WRITE, MAP_SHARED, fd, TX_BUFFER_OFFSET);
@@ -272,6 +288,19 @@ label1:    printf("Unesite broj - clanova niza: ");
 
     // Trigger the processing (This part might need specific IOCTL call based on driver implementation)
     // Assuming IOCTL_CALL is defined and properly implemented in the driver
+
+
+    // Send the data to the device
+    ret = write_start_command(fd);
+
+    if (ret < 0) {
+        printf("Failed to write to device\n");
+        close(fd);
+        return errno;
+    } 
+    else {
+        printf("Successfully wrote %zd to the device\n", array_num);
+    }
 
     // Measure execution time on FPGA
     start_time = get_time_in_us();
