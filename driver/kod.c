@@ -488,7 +488,7 @@ ssize_t fpu_write(struct file *pfile, const char __user *buf, size_t length, lof
 		}
 		for(pos = 0; pos < arr_size; pos++){
 			*tx_vir_buffer = fpu_array[pos];
-			*tx_vir_buffer += sizeof(uint); 
+			tx_vir_buffer += sizeof(uint); 
 		}
 	}
 
