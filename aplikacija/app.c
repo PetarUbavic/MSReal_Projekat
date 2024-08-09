@@ -154,7 +154,6 @@ label1:    printf("Unesite broj - clanova niza: ");
 
     tx_buffer[array_num] = '\0';
 
-    #ifndef MMAP
 
     fd = open(DEVICE_NAME, O_RDWR);
 
@@ -176,6 +175,8 @@ label1:    printf("Unesite broj - clanova niza: ");
     }
 
     close(fd);
+
+    #ifndef MMAP
 
     for(i = 0; i < array_num; i++) {
 
