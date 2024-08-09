@@ -269,54 +269,32 @@ label1:    printf("Unesite broj - clanova niza: ");
 
     // Map TX and RX buffers to the driver
     uint* tx_mmap = (uint*)mmap(0, array_num * sizeof(uint), PROT_READ | PROT_WRITE, MAP_SHARED, fd, TX_BUFFER_OFFSET);
-//    float* rx_mmap = (float*)mmap(NULL, array_num * sizeof(uint), PROT_READ | PROT_WRITE, MAP_SHARED, fd, RX_BUFFER_OFFSET);
 
     if (tx_mmap == MAP_FAILED) {
         printf("Memory mapping TX failed\n");
         close(fd);
         return errno;
     }
-    
-/*    if (rx_mmap == MAP_FAILED) {
-        printf("Memory mapping RX failed\n");
-        close(fd);
-        return errno;
-    }
-*/
+
     // Copy data to the mapped TX buffer
     memcpy(tx_mmap, tx_buffer, array_num * sizeof(uint));
 
-    // Trigger the processing (This part might need specific IOCTL call based on driver implementation)
-    // Assuming IOCTL_CALL is defined and properly implemented in the driver
-
-
-    // Send the data to the device
-    ret = write_start_command(fd);
-
-    if (ret < 0) {
-        printf("Failed to write to device\n");
-        close(fd);
-        return errno;
-    } 
-    else {
-        printf("Successfully wrote START to the device\n");
-    }
-
+    
     // Measure execution time on FPGA
     start_time = get_time_in_us();
-    // Assuming that the processing is triggered and completed within this block
-    end_time = get_time_in_us();
-    long fpga_time = end_time - start_time;
-
-    printf("FPGA execution time: %ld us\n", fpga_time);
+    
+    // Trigger the processing
+    ret = write_start_command(fd);
 
     // Copy processed data from the mapped RX buffer
     memcpy(rx_buffer, tx_mmap, array_num * sizeof(uint));
 
+    end_time = get_time_in_us();
+    long fpga_time = end_time - start_time;    
+    printf("FPGA execution time: %ld us\n", fpga_time);
+
     // Unmap the buffers
     munmap(tx_mmap, array_num * sizeof(uint));
-//    munmap(rx_mmap, array_num * sizeof(float));
-
     close(fd);
 
     #endif
@@ -324,20 +302,13 @@ label1:    printf("Unesite broj - clanova niza: ");
     // Measure execution time on CPU
     start_time = get_time_in_us();
     for (i = 0; i < array_num; i++) {
-        rx_buffer_cpu[i] = exp(hexToFloat(tx_buffer[i]));
+        rx_buffer_cpu[i] = exp(1);      //ne idemo sa hexToFloat(tx_buffer[i]), kako bi merili samo trajanje exp f-je, a ne i hexToFloat f-je
     }
     end_time = get_time_in_us();
     long cpu_time = end_time - start_time;
     
     printf("CPU execution time: %ld us\n", cpu_time);
 
-/*
-    // Print the results
-    for (i = 0; i < array_num; i++) {
-        printf("Result[%d] = %f\n", i, rx_buffer_cpu[i]);
-    }
-
-*/    
     // Print the results
     for (i = 0; i < array_num; i++) {
         printf("FPGA Result[%d] = %f\n", i, hexToFloat(rx_buffer[i]));
