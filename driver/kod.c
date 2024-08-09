@@ -500,6 +500,7 @@ ssize_t fpu_write(struct file *pfile, const char __user *buf, size_t length, lof
 
 static int fpu_mmap(struct file *f, struct vm_area_struct *vma_s) {
     int ret = 0;
+	int pos = 0;
     long length = vma_s->vm_end - vma_s->vm_start;
 
     printk(KERN_INFO "[fpu_mmap] Buffer is being memory mapped\n");
@@ -526,7 +527,7 @@ static int fpu_mmap(struct file *f, struct vm_area_struct *vma_s) {
 		//*tx_vir_buffer = fpu_array[pos];
 		dma_simple_write(tx_phy_buffer, sizeof(fpu_array), dma_p->base_addr);
 		}
-*/
+	
     return 0;
 }
 
