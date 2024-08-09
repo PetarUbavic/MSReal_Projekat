@@ -14,6 +14,7 @@
 #define TX_BUFFER_OFFSET 0x00
 #define RX_BUFFER_OFFSET 0x2048
 
+#define MMAP
 
 uint floatToHex(float num) {
 	uint newNum;
@@ -95,21 +96,6 @@ int write_data_to_position(int fd, int position, uint number) {
 
     else {
         return 0;
-    }
-}
-
-// Function to read processed data
-
-void read_processed_data(int fd, float* buffer) {
-    char result[2048];
-    lseek(fd, 0, SEEK_SET);
-    read(fd, result, sizeof(result));
-    char* token = strtok(result, ",");
-    int index = 0;
-    while (token != NULL && index < BUFFER_SIZE) {
-        sscanf(token, "%08x", (unsigned int*)&buffer[index]);
-        token = strtok(NULL, ",");
-        index++;
     }
 }
 
@@ -265,8 +251,8 @@ label1:    printf("Unesite broj - clanova niza: ");
     fd = open(DEVICE_NAME, O_RDWR);
 
     // Map TX and RX buffers to the driver
-    uint* tx_mmap = (uint*)mmap(0, array_num * sizeof(float), PROT_READ | PROT_WRITE, MAP_SHARED, fd, TX_BUFFER_OFFSET);
-//    float* rx_mmap = (float*)mmap(NULL, array_num * sizeof(float), PROT_READ | PROT_WRITE, MAP_SHARED, fd, RX_BUFFER_OFFSET);
+    uint* tx_mmap = (uint*)mmap(0, array_num * sizeof(uint), PROT_READ | PROT_WRITE, MAP_SHARED, fd, TX_BUFFER_OFFSET);
+//    float* rx_mmap = (float*)mmap(NULL, array_num * sizeof(uint), PROT_READ | PROT_WRITE, MAP_SHARED, fd, RX_BUFFER_OFFSET);
 
     if (tx_mmap == MAP_FAILED) {
         printf("Memory mapping TX failed\n");
@@ -281,7 +267,7 @@ label1:    printf("Unesite broj - clanova niza: ");
     }
 */
     // Copy data to the mapped TX buffer
-    memcpy(tx_mmap, tx_buffer, array_num * sizeof(float));
+    memcpy(tx_mmap, tx_buffer, array_num * sizeof(uint));
 
     // Trigger the processing (This part might need specific IOCTL call based on driver implementation)
     // Assuming IOCTL_CALL is defined and properly implemented in the driver
@@ -298,7 +284,7 @@ label1:    printf("Unesite broj - clanova niza: ");
 //    memcpy(rx_buffer, rx_mmap, array_num * sizeof(float));
 
     // Unmap the buffers
-    munmap(tx_mmap, array_num * sizeof(float));
+    munmap(tx_mmap, array_num * sizeof(uint));
 //    munmap(rx_mmap, array_num * sizeof(float));
 
     close(fd);
