@@ -246,7 +246,7 @@ label1:    printf("Unesite broj - clanova niza: ");
     pclose(fp);
 
     // Print the values for verification
-    printf("Received hex numbers:\n");
+/*    printf("Received hex numbers:\n");
     for (i = 0; i < count; i++) {
         printf("%#x\n", rx_buffer[i]);
     }
@@ -260,7 +260,7 @@ label1:    printf("Unesite broj - clanova niza: ");
             printf("%f\n", hexToFloat((float)rx_buffer[i]));
         }
     }
-
+*/
     #else
 
     fd = open(DEVICE_NAME, O_RDWR);
