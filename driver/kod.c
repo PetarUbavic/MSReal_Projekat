@@ -30,7 +30,7 @@ MODULE_LICENSE("Dual BSD/GPL");
 #define      BUFF_SIZE 	        4096	//256 * 10 (256 hex brojeva, svaki ima 10 znakova i jos malo lufta)
 #define      MAX_ARRAY_SIZE     256
 #define      ARR_SIZE  	        256
-#define		 MSG_SIZE			4096
+#define		 MSG_SIZE			256
 
 
 //** DMA defines **//
