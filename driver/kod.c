@@ -30,6 +30,7 @@ MODULE_LICENSE("Dual BSD/GPL");
 #define      BUFF_SIZE 	        4096	//256 * 10 (256 hex brojeva, svaki ima 10 znakova i jos malo lufta)
 #define      MAX_ARRAY_SIZE     256
 #define      ARR_SIZE  	        256
+#define		 MSG_SIZE			256
 
 
 //** DMA defines **//
@@ -424,13 +425,13 @@ ssize_t fpu_read(struct file *pfile, char __user *buf, size_t length, loff_t *of
 /*This function writes data to the driver*/
 ssize_t fpu_write(struct file *pfile, const char __user *buf, size_t length, loff_t *offset) {	
 
-	char kernel_buf[BUFF_SIZE];
+	char kernel_buf[MSG_SIZE];
     int ret;
     int pos;
     u32 value;
 
     // Check if the buffer length is within limits
-    if (length >= BUFF_SIZE) {
+    if (length >= MSG_SIZE) {
         printk(KERN_WARNING "[fpu_write] Input too large\n");
         return -EFAULT;
     }
